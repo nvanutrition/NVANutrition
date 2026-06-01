@@ -123,13 +123,13 @@ export function FeaturedProductsSection() {
                 whileHover={{ y: -8 }}
                 className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"
               >
-                {/* Product Image Container */}
-                <div className="relative h-64 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                {/* Product Image Container (4:3 Ratio) */}
+                <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
                   <Image
                     src={product.images?.[0] || '/products/placeholder.jpg'}
                     alt={product.name}
                     fill
-                    className="object-contain p-4 group-hover:scale-110 transition-transform duration-500"
+                    className="object-contain p-6 group-hover:scale-105 transition-transform duration-500"
                   />
                   
                   {/* Out of Stock Overlay */}
@@ -143,22 +143,22 @@ export function FeaturedProductsSection() {
 
                   {/* Bestseller Badge */}
                   {product.stock > 0 && (
-                    <motion.div
-                      initial={{ x: -20, opacity: 0 }}
-                      whileInView={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                      className="absolute top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg"
-                    >
+                    <div className="absolute top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-xs font-bold shadow-lg">
                       Bestseller
-                    </motion.div>
+                    </div>
                   )}
 
+                  {/* SKU / ID Badge */}
+                  <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md text-gray-300 px-2 py-1 rounded text-[9px] font-mono tracking-widest uppercase border border-white/10 shadow-sm z-20">
+                    {product.sku ? `SKU: ${product.sku}` : `ID: ${product.id.slice(0, 6)}`}
+                  </div>
+
                   {/* Overlay on Hover */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 z-10 pointer-events-none"></div>
                 </div>
 
                 {/* Product Info */}
-                <div className="p-6 flex-1 flex flex-col justify-between">
+                <div className="p-4 md:p-6 flex-1 flex flex-col justify-between">
                   <div>
                     {/* Rating */}
                     <div className="flex items-center gap-2 mb-3">

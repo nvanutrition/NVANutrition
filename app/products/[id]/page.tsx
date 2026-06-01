@@ -71,7 +71,24 @@ export default function ProductDetailPage() {
   const [imgZoom, setImgZoom] = useState({ transformOrigin: 'center center', scale: 1 });
   const [reviewsList, setReviewsList] = useState(initialReviews);
   const [selectedUnit, setSelectedUnit] = useState<string>('kg');
-  
+
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Auto-swiping carousel
+  useEffect(() => {
+    if (!product || !product.images || product.images.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [product]);
+
+  useEffect(() => {
+    if (product && product.images && product.images.length > 0) {
+      setActiveImage(product.images[currentImageIndex]);
+    }
+  }, [currentImageIndex, product]);
+
   // Review form states
   const [reviewName, setReviewName] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
@@ -256,23 +273,45 @@ export default function ProductDetailPage() {
             <div 
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
-              className="relative h-96 sm:h-[450px] bg-gradient-to-br from-neutral-900 to-neutral-950 rounded-3xl overflow-hidden border border-neutral-850 cursor-zoom-in shadow-2xl flex items-center justify-center group"
+              className="relative w-full aspect-[4/3] bg-gradient-to-br from-neutral-900 to-neutral-950 rounded-3xl overflow-hidden border border-neutral-850 cursor-zoom-in shadow-2xl flex items-center justify-center group"
             >
-              <div 
-                className="relative w-full h-full transition-transform duration-100 ease-out"
-                style={{
-                  transformOrigin: imgZoom.transformOrigin,
-                  transform: `scale(${imgZoom.scale})`
-                }}
-              >
-                <Image
-                  src={activeImage}
-                  alt={product.name}
-                  fill
-                  className="object-contain p-6"
-                  priority
-                />
-              </div>
+              <AnimatePresence mode="wait">
+                <motion.div 
+                  key={currentImageIndex}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="relative w-full h-full transition-transform duration-100 ease-out"
+                  style={{
+                    transformOrigin: imgZoom.transformOrigin,
+                    transform: `scale(${imgZoom.scale})`
+                  }}
+                >
+                  <Image
+                    src={activeImage}
+                    alt={product.name}
+                    fill
+                    className="object-contain p-6"
+                    priority
+                  />
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Dots Indicator */}
+              {product.images && product.images.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                  {product.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(idx); }}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        currentImageIndex === idx ? 'w-6 bg-green-500' : 'bg-white/30 hover:bg-white/60'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* Out of Stock Overlay */}
               {product.stock <= 0 && (
@@ -280,12 +319,6 @@ export default function ProductDetailPage() {
                   <span className="bg-red-600 text-white font-extrabold text-sm px-6 py-3 rounded-full uppercase tracking-wider shadow-lg">
                     Out of Stock
                   </span>
-                </div>
-              )}
-
-              {product.stock > 0 && (
-                <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs font-semibold text-gray-300 pointer-events-none group-hover:opacity-0 transition-opacity">
-                  🔍 Hover to zoom
                 </div>
               )}
             </div>
@@ -296,9 +329,9 @@ export default function ProductDetailPage() {
                 {product.images.map((img, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setActiveImage(img)}
-                    className={`relative w-20 h-20 bg-neutral-900 rounded-xl overflow-hidden border-2 transition duration-300 ${
-                      activeImage === img ? 'border-green-500 bg-green-500/5' : 'border-neutral-800 hover:border-neutral-700'
+                    onClick={() => setCurrentImageIndex(idx)}
+                    className={`relative w-20 h-16 bg-neutral-900 rounded-xl overflow-hidden border-2 transition duration-300 ${
+                      currentImageIndex === idx ? 'border-green-500 bg-green-500/5' : 'border-neutral-800 hover:border-neutral-700'
                     }`}
                   >
                     <Image src={img} alt={`${product.name} ${idx}`} fill className="object-contain p-2" />
@@ -560,15 +593,28 @@ export default function ProductDetailPage() {
                   exit={{ opacity: 0, y: -10 }}
                   className="space-y-4 text-base"
                 >
-                  <p className="font-bold text-white mb-2">Purity and Transparency Assured:</p>
-                  <div className="flex flex-wrap gap-2.5">
+                  <p className="font-bold text-white mb-4">Purity and Transparency Assured:</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {product.ingredients?.map((ing, i) => (
-                      <span key={i} className="bg-neutral-950 border border-neutral-800 text-gray-300 px-4 py-2 rounded-xl text-sm font-bold">
-                        {ing}
-                      </span>
+                      <div key={i} className="bg-neutral-950/60 border border-neutral-800 p-4 rounded-2xl flex flex-col items-center justify-center text-center hover:border-green-500/50 transition">
+                        <div className="w-10 h-10 bg-neutral-900 rounded-full flex items-center justify-center mb-3 text-green-500">
+                          <Check size={18} />
+                        </div>
+                        <span className="text-sm font-bold text-gray-300 block mb-1">
+                          {typeof ing === 'string' ? ing : ing.name}
+                        </span>
+                        {typeof ing === 'object' && ing.quantity && (
+                          <span className="text-xs font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md">
+                            {ing.quantity}{ing.unit}
+                          </span>
+                        )}
+                      </div>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 mt-4 font-semibold">Manufactured in an ISO, GMP, and FSSAI certified facility to maintain 100% safety standards and avoid cross-contamination.</p>
+                  <p className="text-xs text-gray-500 mt-6 font-semibold bg-neutral-900/50 p-3 rounded-lg inline-block border border-neutral-850">
+                    <Check size={12} className="inline mr-1 text-green-500" />
+                    Manufactured in an ISO, GMP, and FSSAI certified facility to maintain 100% safety standards and avoid cross-contamination.
+                  </p>
                 </motion.div>
               )}
 

@@ -8,6 +8,12 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Edit2, Trash2, Plus, X, Upload, Image as ImageIcon, Percent, Star, Tag } from 'lucide-react';
 
+export interface Ingredient {
+  name: string;
+  quantity: string;
+  unit: string;
+}
+
 interface Product {
   id: string;
   name: string;
@@ -24,6 +30,13 @@ interface Product {
   sku?: string;
   isFeatured?: boolean;
   priority?: number;
+  nutritionFacts?: {
+    protein: string;
+    carbs: string;
+    fats: string;
+    calories: string;
+  };
+  ingredients?: Ingredient[];
 }
 
 export default function AdminProducts() {
@@ -47,6 +60,13 @@ export default function AdminProducts() {
     sku: '',
     isFeatured: false,
     priority: '5',
+    nutritionFacts: {
+      protein: '',
+      carbs: '',
+      fats: '',
+      calories: '',
+    },
+    ingredients: [] as Ingredient[],
   });
 
   useEffect(() => {
@@ -161,9 +181,11 @@ export default function AdminProducts() {
         originalMrp: isNaN(originalMrpVal) ? priceVal : originalMrpVal,
         discountPercent: isNaN(discountPercentVal) ? 0 : discountPercentVal,
         sku: formData.sku.trim().toUpperCase(),
-        isFeatured: formData.isFeatured,
-        priority: parseInt(formData.priority) || 5,
-        updatedAt: new Date(),
+      isFeatured: formData.isFeatured,
+      priority: parseInt(formData.priority) || 5,
+      nutritionFacts: formData.nutritionFacts,
+      ingredients: formData.ingredients,
+      updatedAt: new Date(),
       };
 
       if (editingId) {
@@ -220,6 +242,8 @@ export default function AdminProducts() {
       sku: product.sku || '',
       isFeatured: product.isFeatured || false,
       priority: product.priority?.toString() || '5',
+      nutritionFacts: product.nutritionFacts || { protein: '', carbs: '', fats: '', calories: '' },
+      ingredients: product.ingredients || [],
     });
     setEditingId(product.id);
     setShowForm(true);
@@ -241,6 +265,8 @@ export default function AdminProducts() {
       sku: '',
       isFeatured: false,
       priority: '5',
+      nutritionFacts: { protein: '', carbs: '', fats: '', calories: '' },
+      ingredients: [],
     });
     setEditingId(null);
     setShowForm(false);
@@ -429,27 +455,147 @@ export default function AdminProducts() {
                     />
                   </div>
 
-                  <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-white mb-2">Flavors (comma-separated)</label>
-                    <input
-                      type="text"
-                      value={formData.flavors}
-                      onChange={(e) => setFormData({ ...formData, flavors: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 text-white placeholder:text-white/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 font-semibold"
-                      placeholder="Vanilla, Chocolate, Strawberry"
-                    />
-                  </div>
+                  {/* Additional Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 col-span-2">
+                <div>
+                  <label className="text-sm text-gray-400 block mb-1">Benefits (comma separated)</label>
+                  <input
+                    type="text"
+                    value={formData.benefits}
+                    onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl focus:border-green-500 focus:ring-1 focus:ring-green-500 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400 block mb-1">Flavors (comma separated)</label>
+                  <input
+                    type="text"
+                    value={formData.flavors}
+                    onChange={(e) => setFormData({ ...formData, flavors: e.target.value })}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl focus:border-green-500 focus:ring-1 focus:ring-green-500 text-white"
+                  />
+                </div>
+              </div>
 
-                  <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-white mb-2">Benefits (comma-separated)</label>
+              {/* Nutrition Facts */}
+              <div className="glass p-4 rounded-xl border border-white/10 space-y-4 col-span-2">
+                <h3 className="font-semibold text-white">Nutrition Facts (per serving)</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Protein (g)</label>
                     <input
                       type="text"
-                      value={formData.benefits}
-                      onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 text-white placeholder:text-white/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 font-semibold"
-                      placeholder="Fast Absorption, Muscle Growth, Recovery"
+                      value={formData.nutritionFacts.protein}
+                      onChange={(e) => setFormData({ ...formData, nutritionFacts: { ...formData.nutritionFacts, protein: e.target.value } })}
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
                     />
                   </div>
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Carbs (g)</label>
+                    <input
+                      type="text"
+                      value={formData.nutritionFacts.carbs}
+                      onChange={(e) => setFormData({ ...formData, nutritionFacts: { ...formData.nutritionFacts, carbs: e.target.value } })}
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Fats (g)</label>
+                    <input
+                      type="text"
+                      value={formData.nutritionFacts.fats}
+                      onChange={(e) => setFormData({ ...formData, nutritionFacts: { ...formData.nutritionFacts, fats: e.target.value } })}
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">Calories</label>
+                    <input
+                      type="text"
+                      value={formData.nutritionFacts.calories}
+                      onChange={(e) => setFormData({ ...formData, nutritionFacts: { ...formData.nutritionFacts, calories: e.target.value } })}
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Ingredients Array */}
+              <div className="glass p-4 rounded-xl border border-white/10 space-y-4 col-span-2">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold text-white">Active Ingredients</h3>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, ingredients: [...formData.ingredients, { name: '', quantity: '', unit: 'g' }] })}
+                    className="text-xs bg-green-500/20 text-green-400 px-3 py-1 rounded-full hover:bg-green-500/30 transition flex items-center gap-1"
+                  >
+                    <Plus size={14} /> Add Ingredient
+                  </button>
+                </div>
+                
+                <div className="space-y-3">
+                  {formData.ingredients.map((ing, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          placeholder="Ingredient Name"
+                          value={ing.name}
+                          onChange={(e) => {
+                            const newIngs = [...formData.ingredients];
+                            newIngs[idx].name = e.target.value;
+                            setFormData({ ...formData, ingredients: newIngs });
+                          }}
+                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                        />
+                      </div>
+                      <div className="w-24">
+                        <input
+                          type="text"
+                          placeholder="Qty"
+                          value={ing.quantity}
+                          onChange={(e) => {
+                            const newIngs = [...formData.ingredients];
+                            newIngs[idx].quantity = e.target.value;
+                            setFormData({ ...formData, ingredients: newIngs });
+                          }}
+                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                        />
+                      </div>
+                      <div className="w-24">
+                        <select
+                          value={ing.unit}
+                          onChange={(e) => {
+                            const newIngs = [...formData.ingredients];
+                            newIngs[idx].unit = e.target.value;
+                            setFormData({ ...formData, ingredients: newIngs });
+                          }}
+                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                        >
+                          <option value="g" className="bg-gray-900">g</option>
+                          <option value="mg" className="bg-gray-900">mg</option>
+                          <option value="kg" className="bg-gray-900">kg</option>
+                          <option value="mcg" className="bg-gray-900">mcg</option>
+                          <option value="IU" className="bg-gray-900">IU</option>
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newIngs = formData.ingredients.filter((_, i) => i !== idx);
+                          setFormData({ ...formData, ingredients: newIngs });
+                        }}
+                        className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  ))}
+                  {formData.ingredients.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-2">No specific ingredients added.</p>
+                  )}
+                </div>
+              </div>
 
                   {/* SKU + Featured + Priority row */}
                   <div>

@@ -20,7 +20,7 @@ export interface DbProduct {
     fats: string;
     calories: string;
   };
-  ingredients: string[];
+  ingredients: any[];
   usage: string;
   originalMrp?: number;
   discountPercent?: number;

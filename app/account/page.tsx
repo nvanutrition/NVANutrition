@@ -29,8 +29,10 @@ interface Address {
 
 interface Order {
   id: string;
+  orderId?: string;
   status: string;
   totalAmount: number;
+  discountAmount?: number;
   createdAt: any;
   items: any[];
   awbNumber?: string;
@@ -304,56 +306,93 @@ export default function AccountPage() {
                     You haven't placed any orders yet.
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {orders.map((order) => (
-                      <div key={order.id} className="rounded-xl border border-white/10 bg-white/5 p-4 md:p-6 transition hover:bg-white/10">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-white/10">
-                          <div>
-                            <p className="text-sm text-gray-400 mb-1">Order #{order.id}</p>
-                            <p className="text-sm text-gray-500">
-                              {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString() : 'Recent'}
-                            </p>
+                  <div className="space-y-5">
+                    {orders.map((order) => {
+                      const statusColors: Record<string, string> = {
+                        Delivered: 'bg-green-500/15 text-green-400 border-green-500/30',
+                        Cancelled: 'bg-red-500/15 text-red-400 border-red-500/30',
+                        Shipped:   'bg-purple-500/15 text-purple-400 border-purple-500/30',
+                        Processing:'bg-blue-500/15 text-blue-400 border-blue-500/30',
+                        Pending:   'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
+                      };
+                      const statusCls = statusColors[order.status || 'Pending'] || 'bg-gray-500/15 text-gray-400 border-gray-500/30';
+                      const total = Number(order.totalAmount || 0);
+                      const discount = Number(order.discountAmount || 0);
+                      return (
+                        <div key={order.id} className="rounded-2xl border border-white/10 bg-white/3 overflow-hidden hover:bg-white/5 transition">
+                          {/* Order Header */}
+                          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-white/8 bg-white/3">
+                            <div>
+                              <p className="text-xs text-gray-500 mb-0.5">Order ID</p>
+                              <p className="font-mono text-sm font-bold text-white">{order.orderId || order.id}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-gray-500 mb-0.5">
+                                {order.createdAt?.toDate
+                                  ? order.createdAt.toDate().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
+                                  : 'Recent'}
+                              </p>
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusCls}`}>
+                                {order.status || 'Processing'}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex flex-col items-start md:items-end gap-2">
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                              order.status === 'Delivered' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
-                              order.status === 'Cancelled' ? 'bg-red-500/20 text-red-300 border-red-500/30' :
-                              'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                            }`}>
-                              {order.status || 'Processing'}
-                            </span>
-                            <span className="font-bold text-white">₹{order.totalAmount?.toLocaleString()}</span>
-                          </div>
-                        </div>
 
-                        <div className="mb-4">
-                          <p className="text-sm text-gray-300 font-medium mb-2">Items:</p>
-                          <ul className="text-sm text-gray-400 space-y-1">
-                            {order.items?.map((item, idx) => (
-                              <li key={idx}>• {item.name} (x{item.quantity})</li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {(order.awbNumber || order.deliveryPartner) && (
-                          <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between bg-black/20 p-3 rounded-lg">
-                            <div className="flex flex-col sm:flex-row gap-1 sm:gap-4 text-sm">
-                              {order.deliveryPartner && (
-                                <span className="text-gray-300"><span className="text-gray-500">Partner:</span> {order.deliveryPartner}</span>
-                              )}
-                              {order.awbNumber && (
-                                <span className="text-green-400 font-mono"><span className="text-gray-500">AWB:</span> {order.awbNumber}</span>
+                          <div className="p-5 space-y-4">
+                            {/* Items */}
+                            <div className="space-y-2">
+                              {order.items?.filter(i => !i.isPromo).map((item, idx) => (
+                                <div key={idx} className="flex items-center justify-between gap-3 py-2 border-b border-white/5 last:border-0">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold text-white truncate">{item.name}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {item.flavor && `${item.flavor}`}{item.unit && ` · ${item.unit}`} · ×{item.quantity}
+                                    </p>
+                                  </div>
+                                  <span className="text-sm font-bold text-gray-300 flex-shrink-0">
+                                    ₹{(Number(item.price || 0) * (item.quantity || 1)).toLocaleString()}
+                                  </span>
+                                </div>
+                              ))}
+                              {order.items?.some(i => i.isPromo) && (
+                                <div className="flex items-center gap-2 pt-1">
+                                  <span className="text-xs bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full font-bold">🎁 Free Gift Included</span>
+                                </div>
                               )}
                             </div>
-                            {order.awbNumber && (
-                              <button className="text-xs flex items-center gap-1 bg-green-500/20 text-green-300 hover:bg-green-500/30 px-2 py-1 rounded transition">
-                                <ExternalLink size={12} /> Track
-                              </button>
+
+                            {/* Bill Summary */}
+                            <div className="bg-black/30 rounded-xl border border-white/8 p-4 space-y-2">
+                              {discount > 0 && (
+                                <div className="flex justify-between text-xs text-gray-400">
+                                  <span>Discount</span>
+                                  <span className="text-green-400">− ₹{discount.toLocaleString()}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between items-center pt-1 border-t border-white/8">
+                                <span className="text-sm font-bold">Total Paid</span>
+                                <span className="text-lg font-black text-green-400 font-mono">₹{total.toLocaleString()}</span>
+                              </div>
+                            </div>
+
+                            {/* Tracking (if shipped) */}
+                            {(order.awbNumber || order.deliveryPartner) && (
+                              <div className="p-3 bg-purple-500/8 border border-purple-500/20 rounded-xl">
+                                <p className="text-xs text-purple-400 font-bold mb-2">📦 Shipment Tracking</p>
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                                  {order.deliveryPartner && (
+                                    <span className="text-gray-300">Courier: <span className="text-white font-semibold">{order.deliveryPartner}</span></span>
+                                  )}
+                                  {order.awbNumber && (
+                                    <span className="text-gray-300 font-mono">AWB: <span className="text-purple-300 font-bold">{order.awbNumber}</span></span>
+                                  )}
+                                </div>
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
