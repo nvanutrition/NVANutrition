@@ -131,7 +131,7 @@ export function FeaturedProductsSection() {
                 >
                   <Image
                     src={product.images?.[0] || '/products/placeholder.jpg'}
-                    alt={product.name}
+                    alt={`NVA Nutrition ${product.name}`}
                     fill
                     className="object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                   />

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Secure Checkout | NVA Nutrition (Vi Nutrition)',
-  description: 'Complete your purchase securely. Fast shipping and premium supplements guaranteed by NVA Nutrition / Vi Nutrition.',
+  title: 'Secure Checkout | NVA Nutrition',
+  description: 'Complete your purchase securely. Fast shipping and premium supplements guaranteed by NVA Nutrition.',
   robots: {
     index: false,
     follow: true,

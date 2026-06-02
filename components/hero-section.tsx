@@ -120,7 +120,7 @@ export function HeroSection() {
           {/* Headline - Clean and powerful */}
           <motion.div variants={itemVariants} className="mb-8">
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[4.5rem] font-black text-white leading-[1.1] tracking-tight">
-              Fuel Your{' '}
+              NVA Nutrition: Fuel Your{' '}
               <span className="text-gradient-green">Performance.</span>
               <br />
               Transform Your{' '}
@@ -138,7 +138,7 @@ export function HeroSection() {
 
           {/* Sub headline */}
           <motion.p variants={itemVariants} className="text-base md:text-lg text-gray-400 leading-relaxed max-w-2xl mb-12 font-light">
-            Premium Sports Nutrition Designed For Athletes Who Refuse Average. Scientifically formulated. Lab tested. Results guaranteed.
+            Premium NVA Nutrition Designed For Athletes Who Refuse Average. Scientifically formulated. Lab tested. Results guaranteed.
           </motion.p>
 
           {/* CTA Buttons */}

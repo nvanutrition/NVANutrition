@@ -140,6 +140,22 @@
 
   html {
     scroll-behavior: smooth;
+    /* Drastically scale down all rem units on phone mode to prevent overlapping and fit small screens */
+    font-size: 10px;
+  }
+
+  /* Intermediate size for small tablets */
+  @media (min-width: 640px) {
+    html {
+      font-size: 14px;
+    }
+  }
+
+  /* Reset to normal size for tablet and desktop */
+  @media (min-width: 768px) {
+    html {
+      font-size: 16px;
+    }
   }
 
   ::selection {

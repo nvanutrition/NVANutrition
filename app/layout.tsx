@@ -9,9 +9,9 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'NVA Nutrition | Premium Sports Nutrition | Vi Nutrition',
-  description: 'Built for Hustlers. Powered by Nutrition. Premium Protein & Sports Nutrition for athletes, gym enthusiasts, and corporate warriors. NVA Nutrition (also known as Vi Nutrition) brings you the ultimate whey protein, creatine, and pre-workouts in India.',
-  keywords: 'NVA nutrition, Vi nutrition, Vi nutrition nutrition brand, protein powder, sports nutrition, whey protein, mass gainer, creatine, BCAA, pre-workout, India, premium protein, fitness supplements, NVA, Vi, best protein brand in India',
+  title: 'NVA Nutrition | Premium Sports Nutrition',
+  description: 'Built for Hustlers. Powered by NVA Nutrition. Premium Protein & Sports Nutrition for athletes, gym enthusiasts, and corporate warriors. NVA Nutrition brings you the ultimate whey protein, creatine, and pre-workouts in India.',
+  keywords: 'NVA nutrition, nutrition, NVA nutrition protein, NVA nutrition whey protein, NVA nutrition mass gainer, NVA nutrition creatine, NVA nutrition BCAA, NVA nutrition pre-workout, NVA nutrition sports nutrition, NVA nutrition supplements, premium protein, fitness supplements, best protein brand in India, NVA nutrition India',
   authors: [{ name: 'NVA Nutrition' }],
   creator: 'NVA Nutrition',
   publisher: 'NVA Nutrition',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'NVA Nutrition | Premium Sports Nutrition',
-    description: 'Built for Hustlers. Powered by Nutrition. Premium Protein & Sports Nutrition for Champions.',
+    description: 'Built for Hustlers. Powered by NVA Nutrition. Premium Protein & Sports Nutrition for Champions.',
     siteName: 'NVA Nutrition',
     locale: 'en_IN',
     type: 'website',
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'NVA Nutrition | Premium Sports Nutrition',
-    description: 'Built for Hustlers. Powered by Nutrition.',
+    description: 'Built for Hustlers. Powered by NVA Nutrition.',
     images: ['/logo.png'],
   },
   robots: {

@@ -1,0 +1,18 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'My Account | NVA Nutrition',
+  description: 'Manage your NVA Nutrition account, view order history, and update your preferences.',
+  robots: {
+    index: false,
+    follow: false,
+  }
+};
+
+export default function AccountLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
+}
