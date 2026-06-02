@@ -107,8 +107,7 @@ export default function CheckoutPage() {
   const discountAmount = appliedOffers.reduce((sum, offer) => sum + offer.discountAmount, 0);
   const freeGifts = appliedOffers.flatMap(offer => offer.freeProducts);
 
-  const tax = Math.round((totalPrice - discountAmount) * 0.18);
-  const finalTotal = Math.max(0, totalPrice - discountAmount + tax);
+  const finalTotal = Math.max(0, totalPrice - discountAmount);
 
   const handleCheckoutEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -798,14 +797,10 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* Summary grid */}
-                  <div className="grid grid-cols-3 gap-4 mb-8">
+                  <div className="grid grid-cols-2 gap-4 mb-8">
                     <div className="bg-neutral-950 border border-neutral-850 p-4 rounded-2xl">
                       <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Subtotal</p>
                       <p className="text-lg font-bold text-white">₹{totalPrice.toLocaleString()}</p>
-                    </div>
-                    <div className="bg-neutral-950 border border-neutral-850 p-4 rounded-2xl">
-                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Tax (18%)</p>
-                      <p className="text-lg font-bold text-white">₹{tax.toLocaleString()}</p>
                     </div>
                     <div className="bg-neutral-950 border border-neutral-850 p-4 rounded-2xl">
                       <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Total Paid</p>
@@ -999,7 +994,7 @@ export default function CheckoutPage() {
 
                 {/* Order summary column */}
                 <div className="lg:col-span-1">
-                  <OrderSummaryCard totalPrice={totalPrice} tax={tax} finalTotal={finalTotal} items={items} />
+                  <OrderSummaryCard totalPrice={totalPrice} finalTotal={finalTotal} items={items} />
                 </div>
               </motion.div>
             ) : (
@@ -1106,7 +1101,7 @@ export default function CheckoutPage() {
 
                 {/* Order summary column */}
                 <div className="lg:col-span-1">
-                  <OrderSummaryCard totalPrice={totalPrice} tax={tax} finalTotal={finalTotal} items={items} />
+                  <OrderSummaryCard totalPrice={totalPrice} finalTotal={finalTotal} items={items} />
                 </div>
               </motion.div>
             )}
@@ -1120,7 +1115,7 @@ export default function CheckoutPage() {
 }
 
 // Sub-component for Order Summary Card
-function OrderSummaryCard({ totalPrice, tax, finalTotal, items }: { totalPrice: number, tax: number, finalTotal: number, items: any[] }) {
+function OrderSummaryCard({ totalPrice, finalTotal, items }: { totalPrice: number, finalTotal: number, items: any[] }) {
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 shadow-xl sticky top-28 space-y-6">
       <h3 className="text-xl font-black text-white flex items-center gap-2">
@@ -1154,10 +1149,6 @@ function OrderSummaryCard({ totalPrice, tax, finalTotal, items }: { totalPrice: 
         <div className="flex justify-between">
           <span className="text-gray-400 font-medium">Shipping</span>
           <span className="font-extrabold text-green-500 bg-green-500/10 px-2.5 py-0.5 rounded-lg text-xs border border-green-500/20">Free</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400 font-medium">Tax (18% GST)</span>
-          <span className="font-bold text-white">₹{tax.toLocaleString()}</span>
         </div>
         
         <div className="border-t border-neutral-850 pt-4 flex justify-between items-center">

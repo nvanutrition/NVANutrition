@@ -26,8 +26,7 @@ export default function CartPage() {
 
   const discountAmount = appliedOffers.reduce((sum, offer) => sum + offer.discountAmount, 0);
   const freeGifts = appliedOffers.flatMap(offer => offer.freeProducts);
-  const taxAmount = Math.max(0, Math.round((totalPrice - discountAmount) * 0.18));
-  const finalTotal = Math.max(0, totalPrice - discountAmount + taxAmount);
+  const finalTotal = Math.max(0, totalPrice - discountAmount);
 
   if (items.length === 0 && !isCheckingOut) {
     return (
@@ -244,10 +243,6 @@ export default function CartPage() {
                     <span className="font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg text-sm">
                       Free
                     </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 font-medium">Tax (18%)</span>
-                    <span className="font-bold text-gray-900">₹{taxAmount.toLocaleString()}</span>
                   </div>
                 </div>
 
