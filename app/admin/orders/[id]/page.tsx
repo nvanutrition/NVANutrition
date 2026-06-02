@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft, Clock, CreditCard, User, Phone, MapPin, Package,
-  Truck, X, Send, CheckCircle2, AlertCircle, Tag,
+  Truck, X, Send, CheckCircle2, AlertCircle, Tag, XCircle,
   Receipt, TrendingDown, IndianRupee, ShieldCheck
 } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
@@ -51,7 +51,7 @@ interface Order {
   orderId?: string;
 }
 
-const statusOptions = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+const statusOptions = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'RTO'];
 
 const getStatusConfig = (status: string) => {
   const cfg: Record<string, { color: string; bg: string; icon: any; dot: string }> = {
@@ -60,6 +60,7 @@ const getStatusConfig = (status: string) => {
     Shipped:    { color: 'text-purple-400',  bg: 'bg-purple-500/15 border-purple-500/30',  icon: Truck,         dot: 'bg-purple-400' },
     Delivered:  { color: 'text-green-400',   bg: 'bg-green-500/15 border-green-500/30',    icon: CheckCircle2,  dot: 'bg-green-400' },
     Cancelled:  { color: 'text-red-400',     bg: 'bg-red-500/15 border-red-500/30',        icon: AlertCircle,   dot: 'bg-red-400' },
+    RTO:        { color: 'text-orange-400',  bg: 'bg-orange-500/15 border-orange-500/30',  icon: XCircle,       dot: 'bg-orange-400' },
   };
   return cfg[status] || { color: 'text-gray-400', bg: 'bg-gray-500/15 border-gray-500/30', icon: Clock, dot: 'bg-gray-400' };
 };
@@ -81,6 +82,8 @@ export default function OrderDetailsPage() {
   const [shipCourier, setShipCourier] = useState('');
   const [shipAwb, setShipAwb] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [showStatusActionDialog, setShowStatusActionDialog] = useState(false);
+  const [pendingActionStatus, setPendingActionStatus] = useState('');
 
   const router = useRouter();
 
@@ -114,6 +117,9 @@ export default function OrderDetailsPage() {
       setShipCourier(deliveryPartner);
       setShipAwb(awbNumber);
       setShowShipDialog(true);
+    } else if (newStatus === 'RTO' || newStatus === 'Cancelled' || newStatus === 'Delivered') {
+      setPendingActionStatus(newStatus);
+      setShowStatusActionDialog(true);
     } else {
       updateOrderStatus(newStatus, false);
     }
@@ -169,6 +175,56 @@ export default function OrderDetailsPage() {
     } finally {
       setSendingEmail(false);
       setShowShipDialog(false);
+    }
+  };
+
+  const handleConfirmActionStatus = async (sendEmail: boolean) => {
+    if (!order) return;
+    setSendingEmail(true);
+    try {
+      await updateOrderStatus(pendingActionStatus, false);
+      
+      // Restock items since it is Cancelled or RTO
+      if (pendingActionStatus === 'Cancelled' || pendingActionStatus === 'RTO') {
+        for (const item of order.items) {
+          try {
+            const productRef = doc(db, 'products', item.id);
+            const productSnap = await getDoc(productRef);
+            if (productSnap.exists()) {
+              const currentStock = productSnap.data().stock || 0;
+              const newStock = currentStock + item.quantity;
+              await updateDoc(productRef, { stock: newStock });
+              console.log(`Restocked ${item.name}: ${currentStock} -> ${newStock}`);
+            }
+          } catch (stockErr) {
+            console.error(`Failed to restock item ${item.id}:`, stockErr);
+          }
+        }
+      }
+
+      if (sendEmail) {
+        const res = await fetch('/api/send-status-update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: order.orderId || order.id,
+            customerName: order.customerName,
+            email: order.email,
+            status: pendingActionStatus,
+            items: order.items,
+            totalAmount: order.totalAmount,
+          }),
+        });
+        if (res.ok) toast.success(`✉️ ${pendingActionStatus} email sent to customer!`);
+        else toast.error('Status updated but email failed to send.');
+      } else {
+        toast.success(`Order marked as ${pendingActionStatus} (Items restocked).`);
+      }
+    } catch (err) {
+      toast.error('Something went wrong.');
+    } finally {
+      setSendingEmail(false);
+      setShowStatusActionDialog(false);
     }
   };
 
@@ -595,6 +651,77 @@ export default function OrderDetailsPage() {
                   className="w-full py-3 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition font-bold text-xs cursor-pointer border border-transparent hover:border-white/10"
                 >
                   Mark Shipped Without Email
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showStatusActionDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="w-full max-w-md glass rounded-3xl border border-white/15 shadow-2xl overflow-hidden"
+            >
+              <div className={`flex items-center justify-between px-6 py-5 border-b border-white/10 ${pendingActionStatus === 'Cancelled' ? 'bg-red-500/10' : pendingActionStatus === 'Delivered' ? 'bg-green-500/10' : 'bg-orange-500/10'}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pendingActionStatus === 'Cancelled' ? 'bg-red-500/20 border-red-500/30 text-red-400' : pendingActionStatus === 'Delivered' ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-orange-500/20 border-orange-500/30 text-orange-400'} border`}>
+                    {pendingActionStatus === 'Delivered' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-lg leading-tight">Mark as {pendingActionStatus}</h3>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-0.5">Action Required</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowStatusActionDialog(false)} className="p-2 hover:bg-white/10 rounded-xl transition text-gray-400 hover:text-white cursor-pointer">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="px-6 py-5 space-y-4">
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-sm flex justify-between items-center">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase">Order</p>
+                    <p className="font-mono text-white font-bold">{order.orderId || order.id}</p>
+                  </div>
+                </div>
+
+                {pendingActionStatus !== 'Delivered' ? (
+                  <div className="p-3 bg-white/5 border border-white/10 rounded-xl flex items-start gap-2.5 text-xs text-gray-300 font-medium">
+                    <Package size={14} className="flex-shrink-0 mt-0.5 text-gray-400" />
+                    <p>All items in this order will be automatically restocked.</p>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl flex items-start gap-2.5 text-xs text-green-300 font-medium">
+                    <CheckCircle2 size={14} className="flex-shrink-0 mt-0.5 text-green-400" />
+                    <p>Marking as Delivered will optionally send a review request email.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="px-6 pb-6 space-y-3">
+                <button
+                  onClick={() => handleConfirmActionStatus(true)}
+                  disabled={sendingEmail}
+                  className={`w-full flex items-center justify-center gap-2 py-3.5 ${pendingActionStatus === 'Cancelled' ? 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 shadow-red-500/20' : pendingActionStatus === 'Delivered' ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 shadow-green-500/20' : 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 shadow-orange-500/20'} text-white font-bold rounded-xl transition disabled:opacity-50 shadow-lg cursor-pointer`}
+                >
+                  {sendingEmail ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={16} />}
+                  {sendingEmail ? 'Processing…' : `Mark ${pendingActionStatus} & Inform via Email`}
+                </button>
+                <button
+                  onClick={() => handleConfirmActionStatus(false)}
+                  disabled={sendingEmail}
+                  className="w-full py-3.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition disabled:opacity-50 text-sm border border-white/10 cursor-pointer"
+                >
+                  Mark ${pendingActionStatus} Only (Don't Email)
                 </button>
               </div>
             </motion.div>

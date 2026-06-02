@@ -19,7 +19,7 @@ interface Order {
   createdAt: any;
 }
 
-const statusOptions = ['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+const statusOptions = ['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'RTO'];
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -62,6 +62,7 @@ export default function AdminOrders() {
       Shipped: 'bg-purple-500/20 text-purple-300 border border-purple-500/30',
       Delivered: 'bg-green-500/20 text-green-300 border border-green-500/30',
       Cancelled: 'bg-red-500/20 text-red-300 border border-red-500/30',
+      RTO: 'bg-orange-500/20 text-orange-300 border border-orange-500/30',
     };
     return colors[status] || 'bg-gray-500/20 text-gray-300 border border-gray-500/30';
   };

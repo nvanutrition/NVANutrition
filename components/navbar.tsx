@@ -129,10 +129,15 @@ export function Navbar() {
                           <p className="text-xs text-gray-400">Signed in as</p>
                           <p className="text-sm font-bold text-white truncate">{user.email}</p>
                         </div>
-                        <Link href="/account" onClick={() => setShowUserMenu(false)}
+                        <Link href="/account?tab=profile" onClick={() => setShowUserMenu(false)}
                           className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/10 transition">
                           <User size={16} className="text-green-400" />
-                          <span className="text-sm font-medium">My Account</span>
+                          <span className="text-sm font-medium">My Profile</span>
+                        </Link>
+                        <Link href="/account?tab=orders" onClick={() => setShowUserMenu(false)}
+                          className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/10 transition border-t border-white/10">
+                          <Package size={16} className="text-green-400" />
+                          <span className="text-sm font-medium">My Orders</span>
                         </Link>
                         {userRole === 'admin' && (
                           <Link href="/admin" onClick={() => setShowUserMenu(false)}
@@ -289,11 +294,19 @@ export function Navbar() {
                 {/* Account links if logged in */}
                 {user && (
                   <>
-                    <Link href="/account" onClick={() => setIsOpen(false)}
+                    <Link href="/account?tab=profile" onClick={() => setIsOpen(false)}
                       className="flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-white/8 transition">
                       <div className="flex items-center gap-3">
                         <User size={18} className="text-gray-500" />
-                        <span>My Account</span>
+                        <span>My Profile</span>
+                      </div>
+                      <ChevronRight size={14} className="text-gray-600" />
+                    </Link>
+                    <Link href="/account?tab=orders" onClick={() => setIsOpen(false)}
+                      className="flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-white/8 transition">
+                      <div className="flex items-center gap-3">
+                        <Package size={18} className="text-gray-500" />
+                        <span>My Orders</span>
                       </div>
                       <ChevronRight size={14} className="text-gray-600" />
                     </Link>

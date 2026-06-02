@@ -35,7 +35,22 @@ service cloud.firestore {
     // Products Collection
     match /products/{productId} {
       allow read: if true; // Public can read products
+      allow create, delete: if isAdmin();
+      // Allow customers to decrement/increment stock during checkout/cancellation
+      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']);
+    }
+    
+    // Offers Collection
+    match /offers/{offerId} {
+      allow read: if true; // Public needs to read active offers for the cart evaluation
       allow write: if isAdmin();
+    }
+    
+    // Reviews Collection
+    match /reviews/{reviewId} {
+      allow read: if resource.data.status == 'approved' || isAdmin(); 
+      allow create: if request.auth != null; 
+      allow update, delete: if isAdmin();
     }
     
     // Categories Collection

@@ -22,6 +22,7 @@ const getStatusIcon = (status: string) => {
     Shipped:    { icon: Truck,         color: 'text-purple-400' },
     Delivered:  { icon: CheckCircle,   color: 'text-green-400' },
     Cancelled:  { icon: XCircle,       color: 'text-red-400' },
+    RTO:        { icon: XCircle,       color: 'text-orange-400' },
   };
   return map[status] || { icon: Clock, color: 'text-gray-400' };
 };
@@ -33,6 +34,7 @@ const getStatusBadge = (status: string) => {
     Shipped:    'bg-purple-500/10 text-purple-300  border-purple-500/20',
     Delivered:  'bg-green-500/10  text-green-300   border-green-500/20',
     Cancelled:  'bg-red-500/10    text-red-300     border-red-500/20',
+    RTO:        'bg-orange-500/10 text-orange-300  border-orange-500/20',
   };
   return map[status] || 'bg-gray-500/10 text-gray-300 border-gray-500/20';
 };

@@ -19,11 +19,7 @@ import toast from 'react-hot-toast';
 import Link from 'next/link';
 
 // ─── Mock Reviews ─────────────────────────────────────────────────────────────
-const INITIAL_REVIEWS = [
-  { name: 'Vikram Singh', rating: 5, date: 'May 20, 2026', title: 'Outstanding Quality & Mixability', comment: 'Absolutely love the quality. Mixes perfectly without any lumps and the taste is fantastic. Seen great gains in recovery over the past month.', verified: true },
-  { name: 'Priya Sharma', rating: 5, date: 'April 14, 2026', title: 'Highly Recommended', comment: 'Been using NV supplements for six months now. The lab-tested guarantee gives me peace of mind. Excellent post-workout companion.', verified: true },
-  { name: 'Rahul Mehta', rating: 4, date: 'March 28, 2026', title: 'Great taste and results', comment: 'Solid results, energy levels are up during workouts. Highly premium packaging too.', verified: true },
-];
+const INITIAL_REVIEWS: any[] = [];
 
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 type TabId = 'overview' | 'nutrition' | 'ingredients' | 'usage';
@@ -55,9 +51,7 @@ export default function ProductDetailPage() {
   const [selectedFlavor, setSelectedFlavor] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
-  const [reviews, setReviews] = useState(INITIAL_REVIEWS);
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [reviewForm, setReviewForm] = useState({ name: '', rating: 5, title: '', comment: '' });
+  const [reviews, setReviews] = useState<any[]>(INITIAL_REVIEWS);
   const [imgZoom, setImgZoom] = useState({ origin: 'center center', scale: 1 });
   const [freeGiftOffer, setFreeGiftOffer] = useState<{name: string, image: string} | null>(null);
   const buyPanelRef = useRef<HTMLDivElement>(null);
@@ -102,6 +96,21 @@ export default function ProductDetailPage() {
           } catch (e) {
             console.error('Failed to fetch offer', e);
           }
+
+          // Fetch approved reviews
+          try {
+            const reviewsQ = query(collection(db, 'reviews'), where('sku', '==', data.sku), where('status', '==', 'approved'));
+            const revSnap = await getDocs(reviewsQ);
+            const fetchedReviews = revSnap.docs.map(d => {
+              const r = d.data() as any;
+              return { ...r, id: d.id, date: r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Recently' };
+            });
+            // Sort by latest
+            fetchedReviews.sort((a: any, b: any) => b.createdAt?.toDate?.()?.getTime?.() - a.createdAt?.toDate?.()?.getTime?.() || 0);
+            setReviews(fetchedReviews);
+          } catch (e) {
+            console.error('Failed to fetch reviews', e);
+          }
         }
       } finally { setLoading(false); }
     })();
@@ -120,15 +129,6 @@ export default function ProductDetailPage() {
   const handleBuyNow = () => {
     handleAddToCart();
     router.push('/checkout');
-  };
-
-  const submitReview = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!reviewForm.name || !reviewForm.title || !reviewForm.comment) { toast.error('Please fill all fields'); return; }
-    setReviews(prev => [{ ...reviewForm, date: 'Just Now', verified: true }, ...prev]);
-    toast.success('Review submitted!');
-    setReviewForm({ name: '', rating: 5, title: '', comment: '' });
-    setShowReviewForm(false);
   };
 
   // ── Loading ──
@@ -584,25 +584,10 @@ export default function ProductDetailPage() {
                 );
               })}
 
-              <button onClick={() => setShowReviewForm(s => !s)}
-                className="w-full mt-5 bg-green-500 hover:bg-green-400 text-black font-black py-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 text-sm">
-                <MessageSquarePlus size={15} /> Write a Review
-              </button>
-
-              <AnimatePresence>
-                {showReviewForm && (
-                  <motion.form onSubmit={submitReview} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                    className="space-y-3 mt-5 pt-5 border-t border-neutral-800 overflow-hidden">
-                    <input required value={reviewForm.name} onChange={e => setReviewForm(p => ({ ...p, name: e.target.value }))} placeholder="Your Name" className={inpCls} />
-                    <select value={reviewForm.rating} onChange={e => setReviewForm(p => ({ ...p, rating: Number(e.target.value) }))} className={inpCls}>
-                      {[5, 4, 3, 2, 1].map(n => <option key={n} value={n}>{'⭐'.repeat(n)} ({n}/5)</option>)}
-                    </select>
-                    <input required value={reviewForm.title} onChange={e => setReviewForm(p => ({ ...p, title: e.target.value }))} placeholder="Review headline" className={inpCls} />
-                    <textarea required rows={3} value={reviewForm.comment} onChange={e => setReviewForm(p => ({ ...p, comment: e.target.value }))} placeholder="Share your experience…" className={`${inpCls} resize-none`} />
-                    <button type="submit" className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-2.5 rounded-xl text-sm transition cursor-pointer">Submit Review</button>
-                  </motion.form>
-                )}
-              </AnimatePresence>
+              <Link href="/account"
+                className="w-full mt-5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 text-sm">
+                <MessageSquarePlus size={15} /> Rate Your Product
+              </Link>
             </div>
           </div>
 

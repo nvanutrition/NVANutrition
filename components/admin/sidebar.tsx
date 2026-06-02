@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { motion } from 'framer-motion';
-import { Menu, X, BarChart3, Package, ShoppingCart, Users, Settings, LogOut, Zap, Tag } from 'lucide-react';
+import { Menu, X, BarChart3, Package, ShoppingCart, Users, Settings, LogOut, Zap, Tag, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface AdminSidebarProps {
@@ -19,6 +19,7 @@ const navItems = [
   { label: 'Stock', href: '/admin/stock', icon: Zap },
   { label: 'Offers', href: '/admin/offers', icon: Tag },
   { label: 'Customers', href: '/admin/customers', icon: Users },
+  { label: 'Reviews', href: '/admin/reviews', icon: Star },
   { label: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 

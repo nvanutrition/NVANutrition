@@ -2,7 +2,7 @@ import { Metadata, ResolvingMetadata } from 'next';
 import { fetchDbProductBySku } from '@/lib/db-products';
 
 type Props = {
-  params: { sku: string };
+  params: Promise<{ sku: string }>;
   children: React.ReactNode;
 };
 
@@ -11,7 +11,8 @@ export async function generateMetadata(
   parent: ResolvingMetadata
 ): Promise<Metadata> {
   // Try fetching the product by SKU (or ID, as our fallback handles both sometimes)
-  const sku = params.sku;
+  const resolvedParams = await params;
+  const sku = resolvedParams.sku;
   const product = await fetchDbProductBySku(sku);
 
   if (!product) {

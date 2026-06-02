@@ -5,14 +5,12 @@ import { ProtectedRoute } from '@/components/protected-route';
 import { useAuth } from '@/lib/auth-context';
 import { auth, db } from '@/lib/firebase';
 import { updateProfile, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc, addDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
-  Plus, MapPin, User, Phone, Save, Trash2, Star, Home, Package,
-  LogOut, ChevronRight, Clock, Truck, CheckCircle, XCircle, AlertTriangle,
-  CreditCard, Timer, Mail, ShieldCheck, X
+  ArrowRight, Box, CreditCard, LogOut, Package, Star, TrendingUp, AlertTriangle, XCircle, CheckCircle2, Clock, Truck, User, Send, StarIcon, MapPin, Plus, Save, Trash2, Home, Mail, ShieldCheck, X, ChevronRight
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -35,7 +33,7 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string;
   Pending:    { color: 'text-yellow-400',  bg: 'bg-yellow-500/10',  border: 'border-yellow-500/30',  icon: Clock },
   Processing: { color: 'text-blue-400',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    icon: Package },
   Shipped:    { color: 'text-purple-400',  bg: 'bg-purple-500/10',  border: 'border-purple-500/30',  icon: Truck },
-  Delivered:  { color: 'text-green-400',   bg: 'bg-green-500/10',   border: 'border-green-500/30',   icon: CheckCircle },
+  Delivered:  { color: 'text-green-400',   bg: 'bg-green-500/10',   border: 'border-green-500/30',   icon: CheckCircle2 },
   Cancelled:  { color: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/30',     icon: XCircle },
 };
 
@@ -72,7 +70,7 @@ function CancelCountdown({ order }: { order: Order }) {
 
   return (
     <span className="text-xs text-amber-400 font-mono font-bold flex items-center gap-1">
-      <Timer size={11} />
+      <Clock size={11} />
       {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')} left
     </span>
   );
@@ -141,7 +139,39 @@ export default function AccountPage() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  // Review System
+  const [reviewingItem, setReviewingItem] = useState<{sku: string, name: string, image: string, orderId: string} | null>(null);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [userReviews, setUserReviews] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'orders' | 'profile' | 'addresses'>('orders');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab === 'orders' || tab === 'profile' || tab === 'addresses') {
+        setActiveTab(tab);
+      }
+    }
+  }, []);
+
+  const fetchUserOrders = useCallback(async () => {
+    if (!user) return;
+    setLoadingOrders(true);
+    try {
+      const q = query(collection(db, 'orders'), where('userId', '==', user.uid));
+      const snap = await getDocs(q);
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Order));
+      list.sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a));
+      setOrders(list);
+
+      const rQ = query(collection(db, 'reviews'), where('userId', '==', user.uid));
+      const rSnap = await getDocs(rQ);
+      setUserReviews(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch { } finally { setLoadingOrders(false); }
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -155,20 +185,8 @@ export default function AccountPage() {
       } catch { setName(user.displayName || ''); }
       finally { setLoading(false); }
     })();
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      try {
-        const q = query(collection(db, 'orders'), where('userId', '==', user.uid));
-        const snap = await getDocs(q);
-        const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Order));
-        list.sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a));
-        setOrders(list);
-      } catch { } finally { setLoadingOrders(false); }
-    })();
-  }, [user]);
+    fetchUserOrders();
+  }, [user, fetchUserOrders]);
 
   const saveProfile = async () => {
     if (!user) return;
@@ -212,10 +230,59 @@ export default function AccountPage() {
     setCancellingId(order.id);
     try {
       await updateDoc(doc(db, 'orders', order.id), { status: 'Cancelled', updatedAt: new Date() });
+      
+      // Restock items
+      for (const item of order.items) {
+        try {
+          const productRef = doc(db, 'products', item.id);
+          const productSnap = await getDoc(productRef);
+          if (productSnap.exists()) {
+            const currentStock = productSnap.data().stock || 0;
+            const newStock = currentStock + item.quantity;
+            await updateDoc(productRef, { stock: newStock });
+          }
+        } catch (stockErr) {
+          console.error(`Failed to restock item ${item.id}:`, stockErr);
+        }
+      }
+
       setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'Cancelled' } : o));
-      toast.success('Order cancelled successfully');
+      toast.success('Order cancelled and items restocked successfully');
     } catch { toast.error('Failed to cancel order'); }
     setCancellingId(null);
+  };
+
+  const submitReview = async () => {
+    if (!reviewingItem) return;
+    if (!reviewForm.comment.trim()) {
+      toast.error('Please write a review comment.');
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      const newReview = {
+        sku: reviewingItem.sku,
+        productName: reviewingItem.name,
+        userId: user?.uid,
+        userName: user?.displayName || 'NVA Customer',
+        rating: reviewForm.rating,
+        comment: reviewForm.comment,
+        orderId: reviewingItem.orderId,
+        status: 'pending',
+        verified: true, // They bought it, so verified!
+        createdAt: new Date(),
+      };
+      const docRef = await addDoc(collection(db, 'reviews'), newReview);
+      
+      setUserReviews(prev => [...prev, { id: docRef.id, ...newReview }]);
+      toast.success('Review submitted successfully! Waiting for approval.');
+      setReviewingItem(null);
+      setReviewForm({ rating: 5, comment: '' });
+    } catch (err) {
+      toast.error('Failed to submit review.');
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -247,11 +314,10 @@ export default function AccountPage() {
           <div className="flex gap-1 p-1 glass rounded-2xl border border-white/10 mb-6">
             {([
               { id: 'orders', label: 'My Orders', icon: Package },
-              { id: 'profile', label: 'Profile', icon: User },
-              { id: 'addresses', label: 'Addresses', icon: MapPin },
+              { id: 'profile', label: 'My Profile', icon: User },
             ] as const).map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer ${activeTab === tab.id ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'text-gray-500 hover:text-gray-300'}`}>
+              <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer ${activeTab === tab.id ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'text-gray-500 hover:text-gray-300'}`}>
                 <tab.icon size={15} /> {tab.label}
               </button>
             ))}
@@ -318,6 +384,34 @@ export default function AccountPage() {
                                     {item.unit && <span>Size: <span className="text-gray-300">{item.unit}</span></span>}
                                     <span>Qty: <span className="text-gray-300 font-bold">×{item.quantity}</span></span>
                                   </p>
+                                  {order.status === 'Delivered' && (
+                                    (() => {
+                                      const existingReview = userReviews.find(r => r.orderId === order.id && r.sku === (item.sku || item.id));
+                                      if (existingReview) {
+                                        return (
+                                          <div className="mt-3 p-3 bg-white/5 border border-white/10 rounded-xl space-y-2">
+                                            <div className="flex items-center justify-between">
+                                              <div className="flex items-center gap-1">
+                                                {[...Array(5)].map((_, starIdx) => (
+                                                  <StarIcon key={starIdx} size={12} fill={starIdx < existingReview.rating ? "currentColor" : "none"} className={starIdx < existingReview.rating ? "text-yellow-400" : "text-gray-600"} />
+                                                ))}
+                                              </div>
+                                              <span className="text-[10px] font-bold text-gray-400 uppercase">{existingReview.status === 'approved' ? 'Approved' : existingReview.status === 'pending' ? 'Pending Approval' : 'Rejected'}</span>
+                                            </div>
+                                            <p className="text-xs text-gray-300 leading-relaxed">"{existingReview.comment}"</p>
+                                          </div>
+                                        );
+                                      }
+                                      return (
+                                        <button 
+                                          onClick={() => setReviewingItem({ sku: item.sku || item.id, name: item.name, image: item.image, orderId: order.id })}
+                                          className="mt-3 text-xs text-green-400 hover:text-green-300 font-bold flex items-center gap-1.5 w-max bg-green-500/10 px-3 py-1.5 rounded-lg border border-green-500/20 transition cursor-pointer"
+                                        >
+                                          <StarIcon size={12} fill="currentColor" /> Rate Product
+                                        </button>
+                                      );
+                                    })()
+                                  )}
                                 </div>
                                 <span className="text-sm font-bold text-green-400 flex-shrink-0">
                                   ₹{(Number(item.price) * item.quantity).toLocaleString()}
@@ -446,50 +540,48 @@ export default function AccountPage() {
                     <LogOut size={14} /> Sign Out
                   </button>
                 </div>
-              </motion.div>
-            )}
 
-            {/* ─────────── ADDRESSES TAB ─────────── */}
-            {activeTab === 'addresses' && (
-              <motion.div key="addresses" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-bold text-white flex items-center gap-2"><MapPin size={16} className="text-green-400" /> Saved Addresses</h2>
-                  <button onClick={() => setAddressDialogOpen(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 text-sm font-bold hover:bg-green-500/30 transition cursor-pointer">
-                    <Plus size={14} /> Add Address
-                  </button>
-                </div>
-
-                {loading ? (
-                  <div className="flex justify-center py-8"><div className="animate-spin h-6 w-6 border-2 border-green-500 border-t-transparent rounded-full" /></div>
-                ) : addresses.length === 0 ? (
-                  <div className="glass rounded-2xl border-2 border-dashed border-white/10 p-10 text-center">
-                    <MapPin size={32} className="mx-auto text-gray-600 mb-3" />
-                    <p className="text-gray-400">No saved addresses yet</p>
-                    <button onClick={() => setAddressDialogOpen(true)} className="mt-4 text-green-400 text-sm font-semibold hover:text-green-300 cursor-pointer">+ Add your first address</button>
+                {/* ─────────── ADDRESSES (Merged into Profile) ─────────── */}
+                <div className="pt-6 mt-6 border-t border-white/10 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-bold text-white flex items-center gap-2"><MapPin size={16} className="text-green-400" /> Saved Addresses</h2>
+                    <button onClick={() => setAddressDialogOpen(true)}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 text-sm font-bold hover:bg-green-500/30 transition cursor-pointer">
+                      <Plus size={14} /> Add Address
+                    </button>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {addresses.map(addr => (
-                      <div key={addr.id} className="glass rounded-xl border border-white/10 p-4 space-y-2">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-white">{addr.label}</span>
-                              {addr.isDefault && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20 flex items-center gap-1"><Star size={8} /> Default</span>}
+
+                  {loading ? (
+                    <div className="flex justify-center py-8"><div className="animate-spin h-6 w-6 border-2 border-green-500 border-t-transparent rounded-full" /></div>
+                  ) : addresses.length === 0 ? (
+                    <div className="glass rounded-2xl border-2 border-dashed border-white/10 p-10 text-center">
+                      <MapPin size={32} className="mx-auto text-gray-600 mb-3" />
+                      <p className="text-gray-400">No saved addresses yet</p>
+                      <button onClick={() => setAddressDialogOpen(true)} className="mt-4 text-green-400 text-sm font-semibold hover:text-green-300 cursor-pointer">+ Add your first address</button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {addresses.map(addr => (
+                        <div key={addr.id} className="glass rounded-xl border border-white/10 p-4 space-y-2">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-white">{addr.label}</span>
+                                {addr.isDefault && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20 flex items-center gap-1"><Star size={8} /> Default</span>}
+                              </div>
                             </div>
+                            <button onClick={() => removeAddress(addr.id)} className="p-1 text-red-400 hover:bg-red-500/10 rounded-lg transition cursor-pointer"><Trash2 size={13} /></button>
                           </div>
-                          <button onClick={() => removeAddress(addr.id)} className="p-1 text-red-400 hover:bg-red-500/10 rounded-lg transition cursor-pointer"><Trash2 size={13} /></button>
+                          <p className="text-sm text-gray-400">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</p>
+                          <p className="text-sm text-gray-400">{addr.city}, {addr.state} – {addr.pincode}</p>
+                          {!addr.isDefault && (
+                            <button onClick={() => setDefaultAddress(addr.id)} className="text-xs text-green-400 hover:text-green-300 font-semibold cursor-pointer">Set as default</button>
+                          )}
                         </div>
-                        <p className="text-sm text-gray-400">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</p>
-                        <p className="text-sm text-gray-400">{addr.city}, {addr.state} – {addr.pincode}</p>
-                        {!addr.isDefault && (
-                          <button onClick={() => setDefaultAddress(addr.id)} className="text-xs text-green-400 hover:text-green-300 font-semibold cursor-pointer">Set as default</button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
 
@@ -497,6 +589,59 @@ export default function AccountPage() {
         </div>
 
         <AddressDialog open={addressDialogOpen} onClose={() => setAddressDialogOpen(false)} onSave={addAddress} />
+
+        {/* REVIEW MODAL */}
+        <AnimatePresence>
+          {reviewingItem && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+                className="w-full max-w-md glass rounded-3xl border border-white/10 shadow-2xl overflow-hidden"
+              >
+                <div className="p-5 border-b border-white/10 flex items-center justify-between">
+                  <h3 className="font-bold text-lg flex items-center gap-2"><StarIcon className="text-yellow-400" fill="currentColor" size={20} /> Write a Review</h3>
+                  <button onClick={() => setReviewingItem(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition cursor-pointer"><XCircle size={18} className="text-gray-400" /></button>
+                </div>
+                <div className="p-5 space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
+                    {reviewingItem.image ? <img src={reviewingItem.image} className="w-12 h-12 object-contain bg-white/5 rounded-md" /> : <Package size={24} />}
+                    <p className="text-sm font-bold truncate text-gray-300">{reviewingItem.name}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 mb-2 block uppercase tracking-wider">Rating</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button key={star} type="button" onClick={() => setReviewForm(p => ({ ...p, rating: star }))} className="cursor-pointer transition hover:scale-110">
+                          <StarIcon size={28} className={star <= reviewForm.rating ? "text-yellow-400" : "text-gray-600"} fill={star <= reviewForm.rating ? "currentColor" : "none"} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 mb-2 block uppercase tracking-wider">Your Feedback</label>
+                    <textarea 
+                      value={reviewForm.comment}
+                      onChange={(e) => setReviewForm(p => ({ ...p, comment: e.target.value }))}
+                      placeholder="Tell us what you think about this product..."
+                      className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-green-500/50 outline-none min-h-[100px] resize-none"
+                    ></textarea>
+                  </div>
+                  <button 
+                    onClick={submitReview}
+                    disabled={submittingReview}
+                    className="w-full py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-black font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-green-500/20 disabled:opacity-50"
+                  >
+                    {submittingReview ? 'Submitting...' : 'Submit Review'}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </main>
     </ProtectedRoute>
   );
