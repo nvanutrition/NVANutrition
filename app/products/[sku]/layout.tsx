@@ -29,7 +29,7 @@ export async function generateMetadata(
   return {
     title,
     description,
-    keywords: `${product.name}, ${product.category}, NVA nutrition ${product.name}, NVA nutrition protein, buy ${product.name} online, premium ${product.category} India, NVA nutrition`,
+    keywords: `${product.name}, ${product.category}, NVA nutrition ${product.name}, NVA nutrition protein, buy ${product.name} online, premium ${product.category} India, NVA nutrition, nvanutrition, nvnutrition, nvanutitrion`,
     openGraph: {
       title,
       description,

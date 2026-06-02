@@ -11,7 +11,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: 'NVA Nutrition | Premium Sports Nutrition',
   description: 'Built for Hustlers. Powered by NVA Nutrition. Premium Protein & Sports Nutrition for athletes, gym enthusiasts, and corporate warriors. NVA Nutrition brings you the ultimate whey protein, creatine, and pre-workouts in India.',
-  keywords: 'nva nutrition, nva, nva protein, nva nutrition whey protein, nva nutrition mass gainer, nva nutrition creatine, nva nutrition bcaa, nva nutrition pre workout, best protein brand in india, premium protein, fitness supplements, whey protein isolate, gym supplements india, buy protein online, sports nutrition, nva nutrition india, nva supplements, nvanutrition, nva pre workout, nva creatine',
+  keywords: 'nva nutrition, nva, nva protein, nva nutrition whey protein, nva nutrition mass gainer, nva nutrition creatine, nva nutrition bcaa, nva nutrition pre workout, best protein brand in india, premium protein, fitness supplements, whey protein isolate, gym supplements india, buy protein online, sports nutrition, nva nutrition india, nva supplements, nvanutrition, nva pre workout, nva creatine, nvanutrition, nvnutrition, nvanutitrion',
   authors: [{ name: 'NVA Nutrition' }],
   creator: 'NVA Nutrition',
   publisher: 'NVA Nutrition',
