@@ -63,7 +63,7 @@ export async function evaluateOffers(
 
       // Condition 2: Specific product SKU in cart + minimum quantity of that SKU
       if (offer.targetSku) {
-        const matchingCartItem = cartItems.find(item => item.sku === offer.targetSku);
+        const matchingCartItem = cartItems.find(item => item.sku === offer.targetSku || item.id === offer.targetSku);
         if (!matchingCartItem) {
           isEligible = false;
         } else if (offer.minQtyOfTargetSku && matchingCartItem.quantity < offer.minQtyOfTargetSku) {
@@ -73,7 +73,7 @@ export async function evaluateOffers(
 
       // Condition 3: Buy X Get Y (BXGY) validation
       if (offer.offerType === 'bxgy' && offer.buySku && offer.buyQty) {
-        const matchingCartItem = cartItems.find(item => item.sku === offer.buySku);
+        const matchingCartItem = cartItems.find(item => item.sku === offer.buySku || item.id === offer.buySku);
         if (!matchingCartItem || matchingCartItem.quantity < offer.buyQty) {
           isEligible = false;
         }
@@ -110,7 +110,7 @@ export async function evaluateOffers(
           image: prodImg,
         });
       } else if (offer.offerType === 'bxgy' && offer.buySku && offer.buyQty && offer.getSku && offer.getQty) {
-        const matchingCartItem = cartItems.find(item => item.sku === offer.buySku);
+        const matchingCartItem = cartItems.find(item => item.sku === offer.buySku || item.id === offer.buySku);
         if (matchingCartItem) {
           // Calculate BXGY multiplier: e.g. Buy 2 get 1. If qty = 5, multiplier is floor(5/2) = 2.
           const multiplier = Math.floor(matchingCartItem.quantity / offer.buyQty);

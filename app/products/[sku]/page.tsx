@@ -113,7 +113,7 @@ export default function ProductDetailPage() {
     if (!product) return;
     if (product.stock <= 0) { toast.error('Out of stock!'); return; }
     if (quantity > product.stock) { toast.error(`Only ${product.stock} units left`); return; }
-    addItem({ id: product.sku || product.id, name: product.name, price: product.price, quantity, flavor: selectedFlavor, unit: product.weight ? `${product.weight}${product.weightUnit}` : 'Standard', image: activeImage });
+    addItem({ id: product.sku || product.id, sku: product.sku, name: product.name, price: product.price, quantity, flavor: selectedFlavor, unit: product.weight ? `${product.weight}${product.weightUnit}` : 'Standard', image: product.images?.[0] || '/products/placeholder.jpg' });
     toast.success(`${quantity} × ${product.name} added to cart!`);
   };
 

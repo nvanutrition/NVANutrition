@@ -288,7 +288,6 @@ export default function CartPage() {
                 <div className="mt-8 pt-8 border-t-2 border-gray-200 space-y-3 text-center text-sm text-gray-600">
                   <p>✓ Free Shipping on Orders</p>
                   <p>✓ 100% Authentic Products</p>
-                  <p>✓ 30-Day Money-Back Guarantee</p>
                 </div>
               </div>
             </motion.div>

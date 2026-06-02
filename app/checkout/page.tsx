@@ -997,7 +997,7 @@ export default function CheckoutPage() {
 
                 {/* Order summary column */}
                 <div className="lg:col-span-1">
-                  <OrderSummaryCard totalPrice={totalPrice} finalTotal={finalTotal} items={items} />
+                  <OrderSummaryCard totalPrice={totalPrice} finalTotal={finalTotal} items={items} freeGifts={freeGifts} discountAmount={discountAmount} />
                 </div>
               </motion.div>
             ) : (
@@ -1104,7 +1104,7 @@ export default function CheckoutPage() {
 
                 {/* Order summary column */}
                 <div className="lg:col-span-1">
-                  <OrderSummaryCard totalPrice={totalPrice} finalTotal={finalTotal} items={items} />
+                  <OrderSummaryCard totalPrice={totalPrice} finalTotal={finalTotal} items={items} freeGifts={freeGifts} discountAmount={discountAmount} />
                 </div>
               </motion.div>
             )}
@@ -1118,7 +1118,7 @@ export default function CheckoutPage() {
 }
 
 // Sub-component for Order Summary Card
-function OrderSummaryCard({ totalPrice, finalTotal, items }: { totalPrice: number, finalTotal: number, items: any[] }) {
+function OrderSummaryCard({ totalPrice, finalTotal, items, freeGifts, discountAmount }: { totalPrice: number, finalTotal: number, items: any[], freeGifts: any[], discountAmount: number }) {
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 shadow-xl sticky top-28 space-y-6">
       <h3 className="text-xl font-black text-white flex items-center gap-2">
@@ -1141,6 +1141,21 @@ function OrderSummaryCard({ totalPrice, finalTotal, items }: { totalPrice: numbe
             <p className="text-xs font-bold text-green-500">₹{(item.price * item.quantity).toLocaleString()}</p>
           </div>
         ))}
+        {freeGifts.map((gift, idx) => (
+          <div key={`gift-${gift.sku}-${idx}`} className="flex justify-between items-start gap-4 p-2 bg-green-500/10 border border-green-500/20 rounded-xl">
+            <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-neutral-800 flex-shrink-0">
+              <Image src={gift.image} alt={gift.name} fill className="object-cover" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="inline-block text-[8px] font-black tracking-widest uppercase bg-green-500 text-white px-1.5 py-0.5 rounded mb-1">
+                Free Gift
+              </span>
+              <h4 className="text-xs font-bold text-white truncate">{gift.name}</h4>
+              <p className="text-[10px] text-gray-400 mt-1">Qty: {gift.quantity}</p>
+            </div>
+            <p className="text-xs font-black text-green-500 uppercase">Free</p>
+          </div>
+        ))}
       </div>
 
       {/* Math summary */}
@@ -1149,6 +1164,12 @@ function OrderSummaryCard({ totalPrice, finalTotal, items }: { totalPrice: numbe
           <span className="text-gray-400 font-medium">Subtotal</span>
           <span className="font-bold text-white">₹{totalPrice.toLocaleString()}</span>
         </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between">
+            <span className="text-gray-400 font-medium">Promo Discount</span>
+            <span className="font-bold text-green-500">-₹{discountAmount.toLocaleString()}</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-gray-400 font-medium">Shipping</span>
           <span className="font-extrabold text-green-500 bg-green-500/10 px-2.5 py-0.5 rounded-lg text-xs border border-green-500/20">Free</span>

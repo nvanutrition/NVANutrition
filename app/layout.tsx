@@ -9,21 +9,49 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'NVA Nutrition | Premium Sports Nutrition for Hustlers',
-  description: 'Built for Hustlers. Powered by Nutrition. Premium Protein & Sports Nutrition for athletes, gym enthusiasts, and corporate warriors. Welcome to the future of strength, stamina, and performance.',
-  keywords: 'protein powder, sports nutrition, whey protein, mass gainer, creatine, BCAA, pre-workout, India',
-  generator: 'v0.app',
+  title: 'NVA Nutrition | Premium Sports Nutrition | Vi Nutrition',
+  description: 'Built for Hustlers. Powered by Nutrition. Premium Protein & Sports Nutrition for athletes, gym enthusiasts, and corporate warriors. NVA Nutrition (also known as Vi Nutrition) brings you the ultimate whey protein, creatine, and pre-workouts in India.',
+  keywords: 'NVA nutrition, Vi nutrition, Vi nutrition nutrition brand, protein powder, sports nutrition, whey protein, mass gainer, creatine, BCAA, pre-workout, India, premium protein, fitness supplements, NVA, Vi, best protein brand in India',
+  authors: [{ name: 'NVA Nutrition' }],
+  creator: 'NVA Nutrition',
+  publisher: 'NVA Nutrition',
+  generator: 'Next.js',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
-    title: 'NVA Nutrition | Premium Sports Nutrition for Hustlers',
+    title: 'NVA Nutrition | Premium Sports Nutrition',
     description: 'Built for Hustlers. Powered by Nutrition. Premium Protein & Sports Nutrition for Champions.',
+    siteName: 'NVA Nutrition',
+    locale: 'en_IN',
+    type: 'website',
     images: [
       {
         url: '/logo.png',
         width: 1200,
         height: 630,
-        alt: 'NVA Nutrition',
+        alt: 'NVA Nutrition Logo',
       },
     ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NVA Nutrition | Premium Sports Nutrition',
+    description: 'Built for Hustlers. Powered by Nutrition.',
+    images: ['/logo.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 }
 
