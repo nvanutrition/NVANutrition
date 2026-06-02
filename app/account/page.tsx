@@ -374,8 +374,8 @@ export default function AccountPage() {
                           <div className="space-y-2.5">
                             {order.items?.filter(i => !i.isPromo).map((item, i) => (
                               <div key={i} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
-                                <div className="w-12 h-12 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                  {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-1" /> : <Package size={14} className="text-gray-500" />}
+                                <div className="relative w-12 h-12 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                  {item.image ? <Image src={item.image} alt={item.name} fill className="object-contain p-1" /> : <Package size={14} className="text-gray-500" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-semibold text-white truncate">{item.name}</p>
@@ -607,7 +607,11 @@ export default function AccountPage() {
                 </div>
                 <div className="p-5 space-y-4">
                   <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
-                    {reviewingItem.image ? <img src={reviewingItem.image} className="w-12 h-12 object-contain bg-white/5 rounded-md" /> : <Package size={24} />}
+                    {reviewingItem.image ? (
+                      <div className="relative w-12 h-12 flex-shrink-0 bg-white/5 rounded-md overflow-hidden">
+                        <Image src={reviewingItem.image} alt="Product" fill className="object-contain" />
+                      </div>
+                    ) : <Package size={24} />}
                     <p className="text-sm font-bold truncate text-gray-300">{reviewingItem.name}</p>
                   </div>
                   <div>

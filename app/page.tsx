@@ -3,12 +3,14 @@
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { HeroSection } from '@/components/hero-section';
-import { MotivationSection } from '@/components/motivation-section';
 import { FeaturedProductsSection } from '@/components/featured-products';
-import { BenefitsSection } from '@/components/benefits-section';
-import { TransformationSection } from '@/components/transformation-section';
-import { TestimonialsSection } from '@/components/testimonials-section';
-import { NewsletterSection } from '@/components/newsletter-section';
+import dynamic from 'next/dynamic';
+
+const MotivationSection = dynamic(() => import('@/components/motivation-section').then(mod => mod.MotivationSection));
+const BenefitsSection = dynamic(() => import('@/components/benefits-section').then(mod => mod.BenefitsSection));
+const TransformationSection = dynamic(() => import('@/components/transformation-section').then(mod => mod.TransformationSection));
+const TestimonialsSection = dynamic(() => import('@/components/testimonials-section').then(mod => mod.TestimonialsSection));
+const NewsletterSection = dynamic(() => import('@/components/newsletter-section').then(mod => mod.NewsletterSection));
 
 export default function Page() {
   return (

@@ -277,8 +277,8 @@ export default function ProductDetailPage() {
               {/* Free Gift Banner */}
               {freeGiftOffer && (
                 <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl p-4 flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/10 rounded-lg overflow-hidden flex-shrink-0">
-                    <img src={freeGiftOffer.image} alt={freeGiftOffer.name} className="w-full h-full object-contain p-1" />
+                  <div className="relative w-12 h-12 bg-white/10 rounded-lg overflow-hidden flex-shrink-0">
+                    <Image src={freeGiftOffer.image} alt={freeGiftOffer.name} fill className="object-contain p-1" />
                   </div>
                   <div>
                     <h4 className="text-blue-400 font-bold flex items-center gap-1.5 text-sm uppercase tracking-widest"><Gift size={14} /> Special Offer</h4>

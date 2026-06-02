@@ -10,14 +10,14 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div>
-            <h3 className="text-2xl font-bold text-green-600 mb-4">NVA Nutrition</h3>
-            <p className="text-gray-400">Fuel Your Performance. Transform Your Body.</p>
+            <h2 className="text-2xl font-bold text-green-500 mb-4">NVA Nutrition</h2>
+            <p className="text-gray-300">Fuel Your Performance. Transform Your Body.</p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-bold mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-gray-400">
+            <h3 className="font-bold mb-4">Quick Links</h3>
+            <ul className="space-y-2 text-gray-300">
               <li><Link href="/" className="hover:text-green-600 transition">Home</Link></li>
               <li><Link href="/products" className="hover:text-green-600 transition">Products</Link></li>
               <li><Link href="/about" className="hover:text-green-600 transition">About Us</Link></li>
@@ -27,18 +27,18 @@ export function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="font-bold mb-4">Contact Us</h4>
-            <ul className="space-y-2 text-gray-400 text-sm">
+            <h3 className="font-bold mb-4">Contact Us</h3>
+            <ul className="space-y-2 text-gray-300 text-sm">
               <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-green-600" />
+                <Phone className="w-4 h-4 text-green-500" />
                 +91 9508716607
               </li>
               <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-green-600" />
+                <Mail className="w-4 h-4 text-green-500" />
                 info@nvanutrition.in
               </li>
               <li className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-green-600" />
+                <MapPin className="w-4 h-4 text-green-500" />
                 Noida, India
               </li>
             </ul>
@@ -46,18 +46,18 @@ export function Footer() {
 
           {/* Social */}
           <div>
-            <h4 className="font-bold mb-4">Follow Us</h4>
-            <div className="flex gap-4">
-              <a href="#" className="text-gray-400 hover:text-green-600 transition">
+            <h3 className="font-bold mb-4">Follow Us</h3>
+            <div className="flex gap-2">
+              <a href="#" aria-label="Instagram" className="p-2 text-gray-400 hover:text-green-500 transition">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-green-600 transition">
+              <a href="#" aria-label="Facebook" className="p-2 text-gray-400 hover:text-green-500 transition">
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-green-600 transition">
+              <a href="#" aria-label="Twitter" className="p-2 text-gray-400 hover:text-green-500 transition">
                 <Twitter className="w-5 h-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-green-600 transition">
+              <a href="#" aria-label="LinkedIn" className="p-2 text-gray-400 hover:text-green-500 transition">
                 <Linkedin className="w-5 h-5" />
               </a>
             </div>

@@ -92,7 +92,7 @@ export function Navbar() {
               ))}
 
               {/* Cart */}
-              <Link href="/cart" className="relative p-2 text-white/75 hover:text-white transition duration-300">
+              <Link href="/cart" aria-label="View Cart" className="relative p-2 text-white/75 hover:text-white transition duration-300">
                 <ShoppingCart className="w-5 h-5" />
                 {totalItems > 0 && (
                   <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-md">
@@ -168,7 +168,7 @@ export function Navbar() {
 
             {/* Mobile right side: Cart + Hamburger */}
             <div className="md:hidden flex items-center gap-1">
-              <Link href="/cart" className="relative p-2 text-white">
+              <Link href="/cart" aria-label="View Cart" className="relative p-2 text-white">
                 <ShoppingCart className="w-5 h-5" />
                 {totalItems > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 bg-green-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
