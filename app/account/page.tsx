@@ -1,473 +1,502 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ProtectedRoute } from '@/components/protected-route';
 import { useAuth } from '@/lib/auth-context';
 import { auth, db } from '@/lib/firebase';
 import { updateProfile, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { Plus, MapPin, User, Phone, Save, Trash2, Star, Home, Package, LogOut, ExternalLink, ChevronRight } from 'lucide-react';
+import {
+  Plus, MapPin, User, Phone, Save, Trash2, Star, Home, Package,
+  LogOut, ChevronRight, Clock, Truck, CheckCircle, XCircle, AlertTriangle,
+  CreditCard, Timer, Mail, ShieldCheck, X
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface Address {
-  id: string;
-  label: string;
-  line1: string;
-  line2: string;
-  city: string;
-  state: string;
-  pincode: string;
-  isDefault: boolean;
+  id: string; label: string; line1: string; line2: string;
+  city: string; state: string; pincode: string; isDefault: boolean;
 }
 
 interface Order {
-  id: string;
-  orderId?: string;
-  status: string;
-  totalAmount: number;
-  discountAmount?: number;
-  createdAt: any;
-  items: any[];
-  awbNumber?: string;
-  deliveryPartner?: string;
+  id: string; orderId?: string; status: string; totalAmount: number;
+  discountAmount?: number; createdAt: any; items: any[];
+  awbNumber?: string; deliveryPartner?: string;
+  address?: { address?: string; city?: string; state?: string; pinCode?: string; alternatePhone?: string };
+  paymentMethod?: string; paymentStatus?: string; email?: string; phone?: string;
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string; icon: any }> = {
+  Pending:    { color: 'text-yellow-400',  bg: 'bg-yellow-500/10',  border: 'border-yellow-500/30',  icon: Clock },
+  Processing: { color: 'text-blue-400',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    icon: Package },
+  Shipped:    { color: 'text-purple-400',  bg: 'bg-purple-500/10',  border: 'border-purple-500/30',  icon: Truck },
+  Delivered:  { color: 'text-green-400',   bg: 'bg-green-500/10',   border: 'border-green-500/30',   icon: CheckCircle },
+  Cancelled:  { color: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/30',     icon: XCircle },
+};
+
+function getOrderTimestamp(order: Order): number {
+  if (!order.createdAt) return 0;
+  if (order.createdAt?.toMillis) return order.createdAt.toMillis();
+  if (order.createdAt?.seconds) return order.createdAt.seconds * 1000;
+  return new Date(order.createdAt).getTime();
+}
+
+function canCancel(order: Order): boolean {
+  if (!['Pending', 'Processing'].includes(order.status)) return false;
+  const elapsed = Date.now() - getOrderTimestamp(order);
+  return elapsed < 30 * 60 * 1000; // 30 minutes
+}
+
+function CancelCountdown({ order }: { order: Order }) {
+  const [remaining, setRemaining] = useState(0);
+
+  useEffect(() => {
+    const calc = () => {
+      const elapsed = Date.now() - getOrderTimestamp(order);
+      const left = Math.max(0, 30 * 60 * 1000 - elapsed);
+      setRemaining(left);
+    };
+    calc();
+    const iv = setInterval(calc, 1000);
+    return () => clearInterval(iv);
+  }, [order]);
+
+  if (remaining === 0) return null;
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+
+  return (
+    <span className="text-xs text-amber-400 font-mono font-bold flex items-center gap-1">
+      <Timer size={11} />
+      {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')} left
+    </span>
+  );
+}
+
+// ─── Address Dialog ───────────────────────────────────────────────────────────
+function AddressDialog({ open, onClose, onSave }: { open: boolean; onClose: () => void; onSave: (a: Omit<Address, 'id'>) => void }) {
+  const [form, setForm] = useState<Omit<Address, 'id'>>({ label: 'Home', line1: '', line2: '', city: '', state: '', pincode: '', isDefault: false });
+
+  const handleSave = () => {
+    if (!form.line1 || !form.city || !form.state || !form.pincode) {
+      toast.error('Please fill all required address fields');
+      return;
+    }
+    onSave(form);
+    setForm({ label: 'Home', line1: '', line2: '', city: '', state: '', pincode: '', isDefault: false });
+  };
+
+  if (!open) return null;
+  const inp = "w-full px-4 py-2.5 bg-black/40 border border-white/10 text-white placeholder:text-gray-600 rounded-xl focus:outline-none focus:border-green-500/60 transition text-sm";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        className="w-full max-w-lg glass rounded-2xl border border-white/10 shadow-2xl p-6 space-y-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold text-white text-lg">Add Delivery Address</h3>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer"><X size={16} /></button>
+        </div>
+        <div className="space-y-3">
+          <input placeholder="Label (Home, Office…)" value={form.label} onChange={e => setForm(p => ({ ...p, label: e.target.value }))} className={inp} />
+          <textarea placeholder="Address Line 1 *" rows={2} value={form.line1} onChange={e => setForm(p => ({ ...p, line1: e.target.value }))} className={`${inp} resize-none`} />
+          <input placeholder="Address Line 2 (optional)" value={form.line2} onChange={e => setForm(p => ({ ...p, line2: e.target.value }))} className={inp} />
+          <div className="grid grid-cols-3 gap-3">
+            <input placeholder="City *" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} className={inp} />
+            <input placeholder="State *" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} className={inp} />
+            <input placeholder="Pincode *" value={form.pincode} onChange={e => setForm(p => ({ ...p, pincode: e.target.value }))} className={inp} />
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <div onClick={() => setForm(p => ({ ...p, isDefault: !p.isDefault }))}
+              className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${form.isDefault ? 'bg-green-500' : 'bg-white/10'}`}>
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.isDefault ? 'translate-x-5' : ''}`} />
+            </div>
+            <span className="text-sm text-gray-300">Set as default address</span>
+          </label>
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 hover:text-white text-sm font-semibold transition cursor-pointer">Cancel</button>
+          <button onClick={handleSave} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-black font-bold text-sm shadow cursor-pointer">Save Address</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AccountPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
-  const [addressForm, setAddressForm] = useState<Omit<Address, 'id'>>({
-    label: 'Home',
-    line1: '',
-    line2: '',
-    city: '',
-    state: '',
-    pincode: '',
-    isDefault: false,
-  });
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'orders' | 'profile' | 'addresses'>('orders');
 
   useEffect(() => {
-    const loadProfile = async () => {
-      if (!user) return;
-
+    if (!user) return;
+    (async () => {
       try {
-        const userRef = doc(db, 'users', user.uid);
-        const snapshot = await getDoc(userRef);
-        const data = snapshot.data();
-
-        setName((data?.name as string) || user.displayName || '');
-        setPhone((data?.phone as string) || '');
-        setAddresses((data?.addresses as Address[]) || []);
-      } catch (error) {
-        console.error('Failed to load profile:', error);
-        setName(user.displayName || '');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    
-    const loadOrders = async () => {
-      if (!user) return;
-      try {
-        const q = query(
-          collection(db, 'orders'),
-          where('userId', '==', user.uid),
-          // orderBy('createdAt', 'desc') // Requires composite index, doing client-side sort
-        );
-        const snapshot = await getDocs(q);
-        let userOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
-        userOrders.sort((a, b) => {
-          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
-          return timeB - timeA;
-        });
-        setOrders(userOrders);
-      } catch (error) {
-        console.error('Failed to load orders:', error);
-      } finally {
-        setLoadingOrders(false);
-      }
-    };
-
-    loadProfile();
-    loadOrders();
-
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        const data = snap.data();
+        setName(data?.name || user.displayName || '');
+        setPhone(data?.phone || '');
+        setAddresses(data?.addresses || []);
+      } catch { setName(user.displayName || ''); }
+      finally { setLoading(false); }
+    })();
   }, [user]);
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.push('/auth/login');
-      toast.success('Logged out successfully');
-    } catch (error) {
-      toast.error('Failed to log out');
-    }
-  };
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const q = query(collection(db, 'orders'), where('userId', '==', user.uid));
+        const snap = await getDocs(q);
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Order));
+        list.sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a));
+        setOrders(list);
+      } catch { } finally { setLoadingOrders(false); }
+    })();
+  }, [user]);
 
   const saveProfile = async () => {
     if (!user) return;
-
     setSaving(true);
     try {
-      await updateProfile(auth.currentUser!, {
-        displayName: name,
-      });
-
-      await setDoc(
-        doc(db, 'users', user.uid),
-        {
-          uid: user.uid,
-          email: user.email,
-          name,
-          phone,
-          role: 'customer',
-          addresses,
-          updatedAt: new Date(),
-        },
-        { merge: true }
-      );
-
-      toast.success('Profile saved successfully');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to save profile');
-    }
+      await updateProfile(auth.currentUser!, { displayName: name });
+      await setDoc(doc(db, 'users', user.uid), { uid: user.uid, email: user.email, name, phone, role: 'customer', addresses, updatedAt: new Date() }, { merge: true });
+      toast.success('Profile saved!');
+    } catch (e: any) { toast.error(e.message || 'Failed to save'); }
     setSaving(false);
   };
 
-  const addAddress = async () => {
-    if (!addressForm.line1 || !addressForm.city || !addressForm.state || !addressForm.pincode) {
-      toast.error('Please fill in all required address fields');
-      return;
-    }
-
-    const nextAddress: Address = {
-      ...addressForm,
-      id: crypto.randomUUID(),
-    };
-
-    const nextAddresses = addressForm.isDefault
-      ? [
-          nextAddress,
-          ...addresses.map((address) => ({ ...address, isDefault: false })),
-        ]
-      : [...addresses, nextAddress];
-
-    setAddresses(nextAddresses);
+  const addAddress = async (form: Omit<Address, 'id'>) => {
+    const next: Address = { ...form, id: crypto.randomUUID() };
+    const nextList = form.isDefault ? [next, ...addresses.map(a => ({ ...a, isDefault: false }))] : [...addresses, next];
+    setAddresses(nextList);
     setAddressDialogOpen(false);
-    setAddressForm({
-      label: 'Home',
-      line1: '',
-      line2: '',
-      city: '',
-      state: '',
-      pincode: '',
-      isDefault: false,
-    });
-
     try {
-      await setDoc(
-        doc(db, 'users', user!.uid),
-        {
-          addresses: nextAddresses,
-          updatedAt: new Date(),
-        },
-        { merge: true }
-      );
-      toast.success('Address added');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to add address');
-    }
+      await setDoc(doc(db, 'users', user!.uid), { addresses: nextList, updatedAt: new Date() }, { merge: true });
+      toast.success('Address added!');
+    } catch { toast.error('Failed to save address'); }
   };
 
-  const removeAddress = async (addressId: string) => {
-    const nextAddresses = addresses.filter((address) => address.id !== addressId);
-    setAddresses(nextAddresses);
-
-    try {
-      await setDoc(
-        doc(db, 'users', user!.uid),
-        {
-          addresses: nextAddresses,
-          updatedAt: new Date(),
-        },
-        { merge: true }
-      );
-      toast.success('Address removed');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to remove address');
-    }
+  const removeAddress = async (id: string) => {
+    const nextList = addresses.filter(a => a.id !== id);
+    setAddresses(nextList);
+    try { await setDoc(doc(db, 'users', user!.uid), { addresses: nextList, updatedAt: new Date() }, { merge: true }); toast.success('Address removed'); }
+    catch { toast.error('Failed to remove address'); }
   };
 
-  const setDefaultAddress = async (addressId: string) => {
-    const nextAddresses = addresses.map((address) => ({
-      ...address,
-      isDefault: address.id === addressId,
-    }));
-    setAddresses(nextAddresses);
-
-    try {
-      await setDoc(
-        doc(db, 'users', user!.uid),
-        {
-          addresses: nextAddresses,
-          updatedAt: new Date(),
-        },
-        { merge: true }
-      );
-      toast.success('Default address updated');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update default address');
-    }
+  const setDefaultAddress = async (id: string) => {
+    const nextList = addresses.map(a => ({ ...a, isDefault: a.id === id }));
+    setAddresses(nextList);
+    try { await setDoc(doc(db, 'users', user!.uid), { addresses: nextList, updatedAt: new Date() }, { merge: true }); toast.success('Default address updated'); }
+    catch { toast.error('Failed to update default'); }
   };
+
+  const handleCancelOrder = async (order: Order) => {
+    if (!canCancel(order)) { toast.error('Cancellation window has expired'); return; }
+    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+    setCancellingId(order.id);
+    try {
+      await updateDoc(doc(db, 'orders', order.id), { status: 'Cancelled', updatedAt: new Date() });
+      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'Cancelled' } : o));
+      toast.success('Order cancelled successfully');
+    } catch { toast.error('Failed to cancel order'); }
+    setCancellingId(null);
+  };
+
+  const handleLogout = async () => {
+    try { await signOut(auth); router.push('/auth/login'); toast.success('Logged out'); }
+    catch { toast.error('Failed to log out'); }
+  };
+
+  const inp = "w-full px-4 py-2.5 bg-black/30 border border-white/10 text-white placeholder:text-gray-600 rounded-xl focus:outline-none focus:border-green-500/60 transition text-sm";
 
   return (
     <ProtectedRoute>
       <main className="min-h-screen bg-gradient-dark pt-24 pb-16 text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-10"
-          >
-            <h1 className="text-4xl font-bold mb-2">My Profile</h1>
-            <p className="text-gray-400">Update your details and manage delivery addresses.</p>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* ── Header ── */}
+          <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-black text-white">My Account</h1>
+                <p className="text-gray-400 text-sm mt-1">{user?.email}</p>
+              </div>
+              <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 text-sm font-semibold transition cursor-pointer">
+                <LogOut size={15} /> Logout
+              </button>
+            </div>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1 space-y-6">
-              <div className="glass rounded-2xl border border-white/10 p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <User className="text-green-400" />
-                  <h2 className="text-xl font-semibold">Profile</h2>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">Full Name</label>
-                    <Input value={name} onChange={(e) => setName(e.target.value)} className="bg-white/5 border-white/10 text-white" placeholder="Your name" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">Email</label>
-                    <Input value={user?.email || ''} disabled className="bg-white/5 border-white/10 text-white/60" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">Phone</label>
-                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="bg-white/5 border-white/10 text-white" placeholder="+91..." />
-                  </div>
-                  <Button onClick={saveProfile} disabled={saving} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-black font-semibold">
-                    <Save className="w-4 h-4" />
-                    {saving ? 'Saving...' : 'Save Profile'}
-                  </Button>
-                </div>
-              </div>
+          {/* ── Tab Strip ── */}
+          <div className="flex gap-1 p-1 glass rounded-2xl border border-white/10 mb-6">
+            {([
+              { id: 'orders', label: 'My Orders', icon: Package },
+              { id: 'profile', label: 'Profile', icon: User },
+              { id: 'addresses', label: 'Addresses', icon: MapPin },
+            ] as const).map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer ${activeTab === tab.id ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'text-gray-500 hover:text-gray-300'}`}>
+                <tab.icon size={15} /> {tab.label}
+              </button>
+            ))}
+          </div>
 
-              
-              <div className="glass rounded-2xl border border-white/10 p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Home className="text-green-400" />
-                  <h2 className="text-xl font-semibold">Account</h2>
-                </div>
-                <p className="text-gray-400 text-sm mb-4">Your account is set as <span className="text-white font-semibold">customer</span> by default. Admin access is assigned manually from Firestore.</p>
-                <Link href="/admin/orders" className="text-green-400 hover:text-green-300 text-sm font-semibold block mb-4">Go to Admin Panel</Link>
-                <Button onClick={handleLogout} variant="destructive" className="w-full bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 border border-red-500/20">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </Button>
-              </div>
+          <AnimatePresence mode="wait">
 
-            </div>
-
-            <div className="lg:col-span-2 space-y-6">
-              {/* My Orders Section */}
-              <div className="glass rounded-2xl border border-white/10 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <Package className="text-green-400" />
-                  <h2 className="text-xl font-semibold">My Orders</h2>
-                </div>
-
+            {/* ─────────── ORDERS TAB ─────────── */}
+            {activeTab === 'orders' && (
+              <motion.div key="orders" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-5">
                 {loadingOrders ? (
-                  <p className="text-gray-400">Loading orders...</p>
+                  <div className="flex justify-center py-16"><div className="animate-spin h-8 w-8 border-2 border-green-500 border-t-transparent rounded-full" /></div>
                 ) : orders.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-gray-400">
-                    You haven't placed any orders yet.
+                  <div className="glass rounded-2xl border-2 border-dashed border-white/10 p-12 text-center">
+                    <Package size={40} className="mx-auto text-gray-600 mb-3" />
+                    <p className="text-gray-400 font-semibold">No orders yet</p>
+                    <p className="text-gray-600 text-sm mt-1">Your orders will appear here after your first purchase</p>
+                    <Link href="/products" className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 bg-green-500 text-black rounded-xl font-bold text-sm">
+                      Shop Now <ChevronRight size={14} />
+                    </Link>
                   </div>
                 ) : (
-                  <div className="space-y-5">
-                    {orders.map((order) => {
-                      const statusColors: Record<string, string> = {
-                        Delivered: 'bg-green-500/15 text-green-400 border-green-500/30',
-                        Cancelled: 'bg-red-500/15 text-red-400 border-red-500/30',
-                        Shipped:   'bg-purple-500/15 text-purple-400 border-purple-500/30',
-                        Processing:'bg-blue-500/15 text-blue-400 border-blue-500/30',
-                        Pending:   'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
-                      };
-                      const statusCls = statusColors[order.status || 'Pending'] || 'bg-gray-500/15 text-gray-400 border-gray-500/30';
-                      const total = Number(order.totalAmount || 0);
-                      const discount = Number(order.discountAmount || 0);
-                      return (
-                        <div key={order.id} className="rounded-2xl border border-white/10 bg-white/3 overflow-hidden hover:bg-white/5 transition">
-                          {/* Order Header */}
-                          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-white/8 bg-white/3">
-                            <div>
-                              <p className="text-xs text-gray-500 mb-0.5">Order ID</p>
-                              <p className="font-mono text-sm font-bold text-white">{order.orderId || order.id}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-xs text-gray-500 mb-0.5">
-                                {order.createdAt?.toDate
-                                  ? order.createdAt.toDate().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
-                                  : 'Recent'}
-                              </p>
-                              <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusCls}`}>
-                                {order.status || 'Processing'}
-                              </span>
-                            </div>
+                  orders.map((order, idx) => {
+                    const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG['Pending'];
+                    const StatusIcon = cfg.icon;
+                    const ts = getOrderTimestamp(order);
+                    const canBeCancelled = canCancel(order);
+                    const total = Number(order.totalAmount || 0);
+                    const discount = Number(order.discountAmount || 0);
+                    const displayId = order.orderId || order.id;
+
+                    return (
+                      <motion.div key={order.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04 }}
+                        className="glass rounded-2xl border border-white/10 overflow-hidden">
+
+                        {/* Order Header */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-white/8 bg-white/[0.02]">
+                          <div className="space-y-0.5">
+                            <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Order ID</p>
+                            <p className="font-mono font-bold text-white text-sm">{displayId}</p>
                           </div>
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className="text-xs text-gray-500">
+                              {ts ? new Date(ts).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently'}
+                            </span>
+                            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${cfg.bg} ${cfg.color} ${cfg.border}`}>
+                              <StatusIcon size={11} /> {order.status}
+                            </span>
+                          </div>
+                        </div>
 
-                          <div className="p-5 space-y-4">
-                            {/* Items */}
-                            <div className="space-y-2">
-                              {order.items?.filter(i => !i.isPromo).map((item, idx) => (
-                                <div key={idx} className="flex items-center justify-between gap-3 py-2 border-b border-white/5 last:border-0">
-                                  <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-semibold text-white truncate">{item.name}</p>
-                                    <p className="text-xs text-gray-500">
-                                      {item.flavor && `${item.flavor}`}{item.unit && ` · ${item.unit}`} · ×{item.quantity}
-                                    </p>
-                                  </div>
-                                  <span className="text-sm font-bold text-gray-300 flex-shrink-0">
-                                    ₹{(Number(item.price || 0) * (item.quantity || 1)).toLocaleString()}
-                                  </span>
+                        <div className="p-5 space-y-4">
+                          {/* Items */}
+                          <div className="space-y-2.5">
+                            {order.items?.filter(i => !i.isPromo).map((item, i) => (
+                              <div key={i} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
+                                <div className="w-12 h-12 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                  {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-1" /> : <Package size={14} className="text-gray-500" />}
                                 </div>
-                              ))}
-                              {order.items?.some(i => i.isPromo) && (
-                                <div className="flex items-center gap-2 pt-1">
-                                  <span className="text-xs bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full font-bold">🎁 Free Gift Included</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-white truncate">{item.name}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5 flex flex-wrap gap-2">
+                                    {item.flavor && <span>Flavor: <span className="text-gray-300">{item.flavor}</span></span>}
+                                    {item.unit && <span>Size: <span className="text-gray-300">{item.unit}</span></span>}
+                                    <span>Qty: <span className="text-gray-300 font-bold">×{item.quantity}</span></span>
+                                  </p>
                                 </div>
-                              )}
-                            </div>
-
-                            {/* Bill Summary */}
-                            <div className="bg-black/30 rounded-xl border border-white/8 p-4 space-y-2">
-                              {discount > 0 && (
-                                <div className="flex justify-between text-xs text-gray-400">
-                                  <span>Discount</span>
-                                  <span className="text-green-400">− ₹{discount.toLocaleString()}</span>
-                                </div>
-                              )}
-                              <div className="flex justify-between items-center pt-1 border-t border-white/8">
-                                <span className="text-sm font-bold">Total Paid</span>
-                                <span className="text-lg font-black text-green-400 font-mono">₹{total.toLocaleString()}</span>
+                                <span className="text-sm font-bold text-green-400 flex-shrink-0">
+                                  ₹{(Number(item.price) * item.quantity).toLocaleString()}
+                                </span>
                               </div>
-                            </div>
-
-                            {/* Tracking (if shipped) */}
-                            {(order.awbNumber || order.deliveryPartner) && (
-                              <div className="p-3 bg-purple-500/8 border border-purple-500/20 rounded-xl">
-                                <p className="text-xs text-purple-400 font-bold mb-2">📦 Shipment Tracking</p>
-                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                                  {order.deliveryPartner && (
-                                    <span className="text-gray-300">Courier: <span className="text-white font-semibold">{order.deliveryPartner}</span></span>
-                                  )}
-                                  {order.awbNumber && (
-                                    <span className="text-gray-300 font-mono">AWB: <span className="text-purple-300 font-bold">{order.awbNumber}</span></span>
-                                  )}
-                                </div>
+                            ))}
+                            {order.items?.some(i => i.isPromo) && (
+                              <div className="flex items-center gap-2 pt-1">
+                                <span className="text-xs bg-green-500/10 text-green-400 border border-green-500/20 px-2.5 py-1 rounded-full font-bold">🎁 Free Gift Included</span>
                               </div>
                             )}
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
 
-              <div className="glass rounded-2xl border border-white/10 p-6">
-                <div className="flex items-center justify-between gap-4 mb-6">
-                  <div className="flex items-center gap-3">
-                    <MapPin className="text-green-400" />
-                    <h2 className="text-xl font-semibold">Saved Addresses</h2>
+                          {/* Bill summary */}
+                          <div className="bg-black/30 rounded-xl border border-white/8 p-4">
+                            <div className="space-y-1.5 mb-3">
+                              {discount > 0 && (
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-gray-500">Discount Applied</span>
+                                  <span className="text-green-400 font-semibold">− ₹{discount.toLocaleString()}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between text-xs">
+                                <span className="text-gray-500">Shipping</span>
+                                <span className="text-green-400 font-semibold">FREE</span>
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center pt-2 border-t border-white/8">
+                              <span className="text-sm font-bold">Total Paid</span>
+                              <span className="text-lg font-black text-green-400 font-mono">₹{total.toLocaleString()}</span>
+                            </div>
+                            {order.paymentMethod && (
+                              <div className="flex justify-between items-center text-xs mt-1.5">
+                                <span className="text-gray-600">Payment</span>
+                                <span className="text-gray-400 font-bold uppercase">{order.paymentMethod}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Delivery address */}
+                          {order.address && (
+                            <div className="flex items-start gap-2.5 p-3 bg-white/3 rounded-xl border border-white/8">
+                              <MapPin size={14} className="text-green-400 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Delivering To</p>
+                                <p className="text-sm text-gray-300 leading-relaxed">
+                                  {order.address.address}, {order.address.city},{' '}
+                                  {order.address.state} – {order.address.pinCode}
+                                </p>
+                                {order.address.alternatePhone && (
+                                  <p className="text-xs text-gray-500 mt-0.5">Alt: {order.address.alternatePhone}</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Tracking */}
+                          {(order.awbNumber || order.deliveryPartner) && (
+                            <div className="p-3 bg-purple-500/8 border border-purple-500/20 rounded-xl">
+                              <p className="text-xs text-purple-400 font-bold mb-2 flex items-center gap-1.5"><Truck size={12} /> Shipment Tracking</p>
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                                {order.deliveryPartner && <span className="text-gray-400">Courier: <span className="text-white font-semibold">{order.deliveryPartner}</span></span>}
+                                {order.awbNumber && <span className="text-gray-400 font-mono">AWB: <span className="text-purple-300 font-bold">{order.awbNumber}</span></span>}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Cancel button */}
+                          {canBeCancelled && order.status !== 'Cancelled' && (
+                            <div className="flex items-center justify-between p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+                              <div className="flex items-center gap-2 text-xs text-amber-400">
+                                <AlertTriangle size={13} />
+                                <span className="font-semibold">Cancel window open —</span>
+                                <CancelCountdown order={order} />
+                              </div>
+                              <button
+                                onClick={() => handleCancelOrder(order)}
+                                disabled={cancellingId === order.id}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 border border-red-500/25 text-xs font-bold hover:bg-red-500/25 transition cursor-pointer disabled:opacity-50"
+                              >
+                                {cancellingId === order.id
+                                  ? <div className="h-3 w-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                                  : <XCircle size={13} />}
+                                Cancel Order
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </motion.div>
+            )}
+
+            {/* ─────────── PROFILE TAB ─────────── */}
+            {activeTab === 'profile' && (
+              <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                className="glass rounded-2xl border border-white/10 p-6 space-y-5 max-w-lg">
+                <h2 className="font-bold text-white flex items-center gap-2"><User size={16} className="text-green-400" /> Personal Details</h2>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1.5">Full Name</label>
+                    <input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className={inp} />
                   </div>
-                  <Button onClick={() => setAddressDialogOpen(true)} className="bg-green-500 text-black hover:bg-green-400">
-                    <Plus className="w-4 h-4" />
-                    Add Address
-                  </Button>
+                  <div>
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1.5">Email Address</label>
+                    <input value={user?.email || ''} disabled className={`${inp} opacity-50 cursor-not-allowed`} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1.5">Phone Number</label>
+                    <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 98765 43210" className={inp} />
+                  </div>
+                </div>
+
+                <button onClick={saveProfile} disabled={saving}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-black rounded-xl font-bold text-sm shadow cursor-pointer disabled:opacity-50 transition">
+                  {saving ? <div className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <Save size={15} />}
+                  {saving ? 'Saving…' : 'Save Profile'}
+                </button>
+
+                <div className="pt-4 border-t border-white/10">
+                  <p className="text-xs text-gray-600 mb-3">Account type: <span className="text-gray-400 font-semibold">Customer</span></p>
+                  <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 text-sm font-semibold transition cursor-pointer">
+                    <LogOut size={14} /> Sign Out
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ─────────── ADDRESSES TAB ─────────── */}
+            {activeTab === 'addresses' && (
+              <motion.div key="addresses" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-white flex items-center gap-2"><MapPin size={16} className="text-green-400" /> Saved Addresses</h2>
+                  <button onClick={() => setAddressDialogOpen(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 text-sm font-bold hover:bg-green-500/30 transition cursor-pointer">
+                    <Plus size={14} /> Add Address
+                  </button>
                 </div>
 
                 {loading ? (
-                  <p className="text-gray-400">Loading profile...</p>
+                  <div className="flex justify-center py-8"><div className="animate-spin h-6 w-6 border-2 border-green-500 border-t-transparent rounded-full" /></div>
                 ) : addresses.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-gray-400">
-                    No saved addresses yet. Add your first delivery address.
+                  <div className="glass rounded-2xl border-2 border-dashed border-white/10 p-10 text-center">
+                    <MapPin size={32} className="mx-auto text-gray-600 mb-3" />
+                    <p className="text-gray-400">No saved addresses yet</p>
+                    <button onClick={() => setAddressDialogOpen(true)} className="mt-4 text-green-400 text-sm font-semibold hover:text-green-300 cursor-pointer">+ Add your first address</button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {addresses.map((address) => (
-                      <div key={address.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
-                        <div className="flex items-start justify-between gap-4 mb-3">
+                    {addresses.map(addr => (
+                      <div key={addr.id} className="glass rounded-xl border border-white/10 p-4 space-y-2">
+                        <div className="flex items-start justify-between">
                           <div>
-                            <p className="font-semibold text-white">{address.label}</p>
-                            {address.isDefault && <p className="text-xs text-green-400 mt-1 flex items-center gap-1"><Star className="w-3 h-3" /> Default</p>}
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white">{addr.label}</span>
+                              {addr.isDefault && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20 flex items-center gap-1"><Star size={8} /> Default</span>}
+                            </div>
                           </div>
-                          <button onClick={() => removeAddress(address.id)} className="text-red-400 hover:text-red-300">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <button onClick={() => removeAddress(addr.id)} className="p-1 text-red-400 hover:bg-red-500/10 rounded-lg transition cursor-pointer"><Trash2 size={13} /></button>
                         </div>
-                        <p className="text-sm text-gray-400">{address.line1}{address.line2 ? `, ${address.line2}` : ''}</p>
-                        <p className="text-sm text-gray-400">{address.city}, {address.state} - {address.pincode}</p>
-                        {!address.isDefault && (
-                          <button onClick={() => setDefaultAddress(address.id)} className="mt-3 text-sm text-green-400 hover:text-green-300 font-semibold">Set as default</button>
+                        <p className="text-sm text-gray-400">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</p>
+                        <p className="text-sm text-gray-400">{addr.city}, {addr.state} – {addr.pincode}</p>
+                        {!addr.isDefault && (
+                          <button onClick={() => setDefaultAddress(addr.id)} className="text-xs text-green-400 hover:text-green-300 font-semibold cursor-pointer">Set as default</button>
                         )}
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
+              </motion.div>
+            )}
 
-          <Dialog open={addressDialogOpen} onOpenChange={setAddressDialogOpen}>
-            <DialogContent className="bg-slate-950 border-white/10 text-white sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Add Address</DialogTitle>
-                <DialogDescription className="text-gray-400">Save multiple delivery addresses for faster checkout.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Input value={addressForm.label} onChange={(e) => setAddressForm({ ...addressForm, label: e.target.value })} className="bg-white/5 border-white/10 text-white" placeholder="Home, Office, etc." />
-                <Textarea value={addressForm.line1} onChange={(e) => setAddressForm({ ...addressForm, line1: e.target.value })} className="bg-white/5 border-white/10 text-white" placeholder="Address line 1" />
-                <Textarea value={addressForm.line2} onChange={(e) => setAddressForm({ ...addressForm, line2: e.target.value })} className="bg-white/5 border-white/10 text-white" placeholder="Address line 2 (optional)" />
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <Input value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })} className="bg-white/5 border-white/10 text-white" placeholder="City" />
-                  <Input value={addressForm.state} onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })} className="bg-white/5 border-white/10 text-white" placeholder="State" />
-                  <Input value={addressForm.pincode} onChange={(e) => setAddressForm({ ...addressForm, pincode: e.target.value })} className="bg-white/5 border-white/10 text-white" placeholder="Pincode" />
-                </div>
-                <label className="flex items-center gap-2 text-sm text-gray-300">
-                  <input type="checkbox" checked={addressForm.isDefault} onChange={(e) => setAddressForm({ ...addressForm, isDefault: e.target.checked })} />
-                  Set as default address
-                </label>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setAddressDialogOpen(false)} className="border-white/10 text-white bg-transparent">Cancel</Button>
-                <Button onClick={addAddress} className="bg-green-500 text-black hover:bg-green-400">Save Address</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          </AnimatePresence>
         </div>
+
+        <AddressDialog open={addressDialogOpen} onClose={() => setAddressDialogOpen(false)} onSave={addAddress} />
       </main>
     </ProtectedRoute>
   );

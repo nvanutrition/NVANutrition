@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Tag, Plus, Trash2, Edit, Save, X, ToggleLeft, ToggleRight, CheckCircle, Percent } from 'lucide-react';
+import { fetchDbProducts, DbProduct } from '@/lib/db-products';
 
 interface Offer {
   id: string;
@@ -26,6 +27,7 @@ interface Offer {
 
 export default function AdminOffers() {
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [products, setProducts] = useState<DbProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export default function AdminOffers() {
 
   useEffect(() => {
     fetchOffers();
+    fetchDbProducts(true).then(setProducts);
   }, []);
 
   const fetchOffers = async () => {
@@ -72,7 +75,7 @@ export default function AdminOffers() {
       return;
     }
 
-    const payload: Partial<Offer> = {
+    const basePayload = {
       name: formData.name,
       status: formData.status,
       offerType: formData.offerType,
@@ -87,6 +90,9 @@ export default function AdminOffers() {
       getSku: formData.getSku || undefined,
       getQty: formData.getQty ? parseInt(formData.getQty) : undefined,
     };
+    
+    // Firestore throws error for undefined values. Strip them out.
+    const payload = Object.fromEntries(Object.entries(basePayload).filter(([_, v]) => v !== undefined));
 
     try {
       if (editingId) {
@@ -259,13 +265,18 @@ export default function AdminOffers() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Requires Specific Product SKU</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. SKU-WHEY-MILK"
+                  <select
                     value={formData.targetSku}
                     onChange={e => setFormData({ ...formData, targetSku: e.target.value })}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm"
-                  />
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm cursor-pointer focus:outline-none focus:border-green-500"
+                  >
+                    <option value="" className="bg-neutral-900">-- Select Target SKU --</option>
+                    {products.map(p => (
+                      <option key={p.id} value={p.sku || p.id} className="bg-neutral-900">
+                        {p.name} ({p.sku || 'No SKU'})
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Min Quantity of SKU</label>
@@ -300,13 +311,18 @@ export default function AdminOffers() {
               <div className="p-4 bg-white/5 rounded-xl border border-white/5 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Reward Gift SKU</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. SKU-SHAKER-BLACK"
+                  <select
                     value={formData.rewardSku}
                     onChange={e => setFormData({ ...formData, rewardSku: e.target.value })}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm"
-                  />
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm cursor-pointer focus:outline-none focus:border-green-500"
+                  >
+                    <option value="" className="bg-neutral-900">-- Select Reward Gift SKU --</option>
+                    {products.map(p => (
+                      <option key={p.id} value={p.sku || p.id} className="bg-neutral-900">
+                        {p.name} ({p.sku || 'No SKU'})
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Gift Quantity</label>
@@ -328,13 +344,18 @@ export default function AdminOffers() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Buy SKU</label>
-                  <input
-                    type="text"
-                    placeholder="SKU-WHEY"
+                  <select
                     value={formData.buySku}
                     onChange={e => setFormData({ ...formData, buySku: e.target.value })}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm"
-                  />
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm cursor-pointer focus:outline-none focus:border-green-500"
+                  >
+                    <option value="" className="bg-neutral-900">-- Select Buy SKU --</option>
+                    {products.map(p => (
+                      <option key={p.id} value={p.sku || p.id} className="bg-neutral-900">
+                        {p.name} ({p.sku || 'No SKU'})
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Buy Min Qty</label>
@@ -348,13 +369,18 @@ export default function AdminOffers() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Get SKU (Free)</label>
-                  <input
-                    type="text"
-                    placeholder="SKU-CREATINE"
+                  <select
                     value={formData.getSku}
                     onChange={e => setFormData({ ...formData, getSku: e.target.value })}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm"
-                  />
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm cursor-pointer focus:outline-none focus:border-green-500"
+                  >
+                    <option value="" className="bg-neutral-900">-- Select Free Get SKU --</option>
+                    {products.map(p => (
+                      <option key={p.id} value={p.sku || p.id} className="bg-neutral-900">
+                        {p.name} ({p.sku || 'No SKU'})
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Get Free Qty</label>

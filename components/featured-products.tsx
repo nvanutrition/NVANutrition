@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { fetchFeaturedProducts, DbProduct } from '@/lib/db-products';
 import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
-import { ShoppingCart, Eye, Star, Zap } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShoppingCart, Eye, Star, Zap, Dumbbell, Flame, Scale, Activity, Check } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
@@ -14,6 +15,7 @@ export function FeaturedProductsSection() {
   const [loading, setLoading] = useState(true);
   const [selectedFlavors, setSelectedFlavors] = useState<Record<string, string>>({});
   const addItem = useCartStore((state) => state.addItem);
+  const router = useRouter();
 
   useEffect(() => {
     async function loadProducts() {
@@ -35,7 +37,7 @@ export function FeaturedProductsSection() {
       return;
     }
     addItem({
-      id: product.id,
+      id: product.sku || product.id,
       name: product.name,
       price: product.price,
       quantity: 1,
@@ -123,13 +125,15 @@ export function FeaturedProductsSection() {
                 whileHover={{ y: -8 }}
                 className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"
               >
-                {/* Product Image Container (4:3 Ratio) */}
-                <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                <div 
+                  className="relative w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center cursor-pointer"
+                  onClick={() => router.push(`/products/${product.sku || product.id}`)}
+                >
                   <Image
                     src={product.images?.[0] || '/products/placeholder.jpg'}
                     alt={product.name}
                     fill
-                    className="object-contain p-6 group-hover:scale-105 transition-transform duration-500"
+                    className="object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                   />
                   
                   {/* Out of Stock Overlay */}
@@ -158,67 +162,69 @@ export function FeaturedProductsSection() {
                 </div>
 
                 {/* Product Info */}
-                <div className="p-4 md:p-6 flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Rating */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="flex gap-0.5">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={14}
-                            className={i < Math.floor(product.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs font-bold text-gray-600">({product.reviews} reviews)</span>
-                    </div>
-
+                <div className="p-4 flex-1 flex flex-col justify-between">
+                  <div className="cursor-pointer" onClick={() => router.push(`/products/${product.sku || product.id}`)}>
                     {/* Product Name */}
                     <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
 
                     {/* Description */}
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.shortDescription || product.description}</p>
 
-                    {/* Benefits */}
-                    <div className="mb-4">
-                      <div className="flex flex-wrap gap-2">
-                        {product.benefits.slice(0, 2).map((benefit, i) => (
-                          <motion.span
-                            key={i}
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: i * 0.1 }}
-                            className="text-xs font-semibold bg-green-100 text-green-700 px-3 py-1 rounded-full animate-scaleIn"
-                          >
-                            ✓ {benefit}
-                          </motion.span>
-                        ))}
+                    {/* Nutrition Options */}
+                    {(product.nutritionOptions?.length ?? 0) > 0 && (
+                      <div className="mb-4 flex flex-wrap gap-2">
+                        {product.nutritionOptions?.slice(0, 4).map((opt, idx) => {
+                          let LogoIcon = Check;
+                          const name = opt.name.toLowerCase();
+                          if (name.includes('protein')) LogoIcon = Dumbbell;
+                          else if (name.includes('carb')) LogoIcon = Scale;
+                          else if (name.includes('fat') || name.includes('cal')) LogoIcon = Flame;
+                          else if (name.includes('vit')) LogoIcon = Activity;
+
+                          return (
+                            <div key={idx} className="flex items-center gap-1.5 bg-green-50 border border-green-100 px-2 py-1 rounded-md" title={opt.basis === 'per_serving' ? 'Per Serving' : opt.basis === 'per_100g' ? 'Per 100g' : 'Per Gram'}>
+                              <LogoIcon size={12} className="text-green-600" />
+                              <span className="text-[10px] font-black text-green-700 whitespace-nowrap">
+                                {opt.quantity}<span className="text-xs">{opt.unit}</span> <span className="text-gray-500 font-bold uppercase">{opt.name}</span>
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
-                    </div>
+                    )}
 
-                    {/* Flavor Selector */}
-                    {product.flavors.length > 0 && (
-                      <div className="mb-4">
-                        <label className="text-xs font-semibold text-gray-700 mb-2 block">Choose Flavor</label>
-                        <select
-                          value={selectedFlavors[product.id] || product.flavors[0]}
-                          onChange={(e) => setSelectedFlavors({ ...selectedFlavors, [product.id]: e.target.value })}
-                          className="w-full px-3 py-2 border-2 border-gray-300 hover:border-green-400 focus:border-green-500 rounded-lg text-sm font-medium transition focus:outline-none bg-white text-gray-900"
-                          disabled={product.stock <= 0}
-                        >
-                          {product.flavors.map((flavor) => (
-                            <option key={flavor} value={flavor}>
-                              {flavor}
-                            </option>
-                          ))}
-                        </select>
+                    {/* Flavor Selector (Pills) */}
+                    {(product.flavors?.length ?? 0) > 0 && (
+                      <div className="mb-5">
+                        <p className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Flavor:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {product.flavors.map((flavor) => {
+                            const isSelected = (selectedFlavors[product.sku || product.id] || product.flavors[0]) === flavor;
+                            return (
+                              <button
+                                key={flavor}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedFlavors({ ...selectedFlavors, [product.sku || product.id]: flavor });
+                                }}
+                                disabled={product.stock <= 0}
+                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition border cursor-pointer ${
+                                  isSelected 
+                                    ? 'bg-green-500 text-white border-green-500 shadow-md' 
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
+                                }`}
+                              >
+                                {flavor}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>
 
                   {/* Price and Actions */}
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200 mt-4">
+                  <div className="flex flex-col pt-4 border-t border-gray-200 mt-4 gap-4">
                     <div>
                       {product.originalMrp && product.discountPercent && product.discountPercent > 0 ? (
                         <div className="space-y-1">
@@ -240,25 +246,19 @@ export function FeaturedProductsSection() {
                         </p>
                       )}
                     </div>
-                    <div className="flex gap-2">
-                      <Link href={`/products/${product.id}`}>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition cursor-pointer"
-                        >
-                          <Eye className="w-5 h-5 text-gray-700" />
-                        </motion.button>
-                      </Link>
+                    <div className="w-full">
                       <motion.button
-                        whileHover={product.stock > 0 ? { scale: 1.05 } : {}}
-                        whileTap={product.stock > 0 ? { scale: 0.95 } : {}}
+                        whileHover={product.stock > 0 ? { scale: 1.02 } : {}}
+                        whileTap={product.stock > 0 ? { scale: 0.98 } : {}}
                         disabled={product.stock <= 0}
-                        onClick={() => handleAddToCart(product, selectedFlavors[product.id] || product.flavors[0])}
-                        className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 disabled:text-gray-300 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(product, selectedFlavors[product.sku || product.id] || product.flavors[0]);
+                        }}
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 disabled:text-gray-300 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg cursor-pointer"
                       >
                         <ShoppingCart className="w-5 h-5" />
-                        {product.stock <= 0 ? 'Out' : 'Add'}
+                        {product.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
                       </motion.button>
                     </div>
                   </div>

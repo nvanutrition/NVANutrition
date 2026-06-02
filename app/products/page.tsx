@@ -9,7 +9,8 @@ import { useCartStore } from '@/lib/store';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ShoppingCart, Eye, Filter, Grid3X3, BarChart3 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShoppingCart, Eye, Filter, Grid3X3, BarChart3, Dumbbell, Zap, Activity, Flame, Check, Scale } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ProductsPage() {
@@ -18,6 +19,7 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState('All Products');
   const [selectedFlavors, setSelectedFlavors] = useState<Record<string, string>>({});
   const addItem = useCartStore((state) => state.addItem);
+  const router = useRouter();
 
   useEffect(() => {
     async function loadProducts() {
@@ -43,7 +45,7 @@ export default function ProductsPage() {
       return;
     }
     addItem({
-      id: product.id,
+      id: product.sku || product.id,
       name: product.name,
       price: product.price,
       quantity: 1,
@@ -164,17 +166,20 @@ export default function ProductsPage() {
                   className="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group flex flex-col justify-between"
                 >
                   {/* Product Image */}
-                  <div className="relative h-80 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                  <div 
+                    className="relative w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center cursor-pointer"
+                    onClick={() => router.push(`/products/${product.sku || product.id}`)}
+                  >
                     <motion.div
                       whileHover={{ scale: 1.1 }}
                       transition={{ duration: 0.4 }}
-                      className="w-full h-full relative flex items-center justify-center p-4"
+                      className="w-full h-full relative flex items-center justify-center"
                     >
                       <Image
                         src={product.images?.[0] || '/products/placeholder.jpg'}
                         alt={product.name}
                         fill
-                        className="object-contain p-4"
+                        className="object-contain p-2"
                       />
                     </motion.div>
 
@@ -202,115 +207,106 @@ export default function ProductsPage() {
                       </motion.span>
                     </motion.div>
                     
-                    {product.stock > 0 && (
-                      <motion.div
-                        initial={{ scale: 0, rotate: -10 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ delay: index * 0.08 + 0.2, type: 'spring' }}
-                        className="absolute top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg"
-                      >
-                        ₹{product.price.toLocaleString()}
-                      </motion.div>
-                    )}
                   </div>
 
                   {/* Product Info */}
-                  <div className="p-6 flex-1 flex flex-col justify-between">
-                    <div>
+                  <div className="p-4 flex-1 flex flex-col justify-between">
+                    <div className="cursor-pointer" onClick={() => router.push(`/products/${product.sku || product.id}`)}>
                       <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-green-600 transition">
                         {product.name}
                       </h3>
                       
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="flex items-center gap-1">
-                          <span className="text-lg font-bold text-amber-500">⭐</span>
-                          <span className="text-sm font-bold text-gray-900">{product.rating}</span>
-                        </div>
-                        <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
-                          ({product.reviews} reviews)
-                        </span>
-                      </div>
+                      <p className="text-gray-700 text-sm mb-5 line-clamp-2">{product.shortDescription || product.description}</p>
 
-                      <p className="text-gray-700 text-sm mb-5 line-clamp-2">{product.description}</p>
+                      {/* Nutrition Options */}
+                      {(product.nutritionOptions?.length ?? 0) > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-6">
+                          {product.nutritionOptions?.slice(0, 4).map((opt, idx) => {
+                            let LogoIcon = Check;
+                            const name = opt.name.toLowerCase();
+                            if (name.includes('protein')) LogoIcon = Dumbbell;
+                            else if (name.includes('carb')) LogoIcon = Scale;
+                            else if (name.includes('fat') || name.includes('cal')) LogoIcon = Flame;
+                            else if (name.includes('vit')) LogoIcon = Activity;
 
-                      {/* Nutrition Info */}
-                      {product.nutritionFacts && (
-                        <div className="grid grid-cols-4 gap-2 mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
-                          <div className="text-center">
-                            <p className="font-bold text-green-600 text-base">{product.nutritionFacts?.protein ?? '—'}</p>
-                            <p className="text-[10px] text-gray-600 font-semibold">Protein</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="font-bold text-green-600 text-base">{product.nutritionFacts?.carbs ?? '—'}</p>
-                            <p className="text-[10px] text-gray-600 font-semibold">Carbs</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="font-bold text-green-600 text-base">{product.nutritionFacts?.fats ?? '—'}</p>
-                            <p className="text-[10px] text-gray-600 font-semibold">Fats</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="font-bold text-green-600 text-base">{product.nutritionFacts?.calories ?? '—'}</p>
-                            <p className="text-[10px] text-gray-600 font-semibold">Cal</p>
-                          </div>
+                            return (
+                              <div key={idx} className="flex items-center gap-1.5 bg-green-50/50 border border-green-100 px-2 py-1 rounded-md" title={opt.basis === 'per_serving' ? 'Per Serving' : opt.basis === 'per_100g' ? 'Per 100g' : 'Per Gram'}>
+                                <LogoIcon size={12} className="text-green-600" />
+                                <span className="text-[10px] font-black text-green-700 whitespace-nowrap">
+                                  {opt.quantity}<span className="text-xs">{opt.unit}</span> <span className="text-gray-500 font-bold uppercase">{opt.name}</span>
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
 
-                      {/* Flavor Selector */}
+                      {/* Flavor Selector (Pills) */}
                       {(product.flavors?.length ?? 0) > 0 && (
                         <div className="mb-5">
                           <p className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Flavor:</p>
-                          <select
-                            value={selectedFlavors[product.id] || product.flavors[0]}
-                            onChange={(e) => setSelectedFlavors({ ...selectedFlavors, [product.id]: e.target.value })}
-                            className="w-full px-3 py-3 border-2 border-gray-200 rounded-lg text-sm font-semibold focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition bg-white"
-                            disabled={product.stock <= 0}
-                          >
-                            {product.flavors.map((flavor) => (
-                              <option key={flavor} value={flavor}>
-                                {flavor}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="flex flex-wrap gap-2">
+                            {product.flavors.map((flavor) => {
+                              const isSelected = (selectedFlavors[product.sku || product.id] || product.flavors[0]) === flavor;
+                              return (
+                                <button
+                                  key={flavor}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedFlavors({ ...selectedFlavors, [product.sku || product.id]: flavor });
+                                  }}
+                                  disabled={product.stock <= 0}
+                                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition border cursor-pointer ${
+                                    isSelected 
+                                      ? 'bg-green-500 text-white border-green-500 shadow-md' 
+                                      : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
+                                  }`}
+                                >
+                                  {flavor}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>
 
-                    {/* Price and Buttons */}
-                    <div>
-                      {product.originalMrp && product.discountPercent && product.discountPercent > 0 && (
-                        <div className="mb-4 bg-gray-50 border border-gray-100 p-3 rounded-xl flex justify-between items-center">
-                          <div>
-                            <span className="text-xs text-gray-400 block font-semibold">Original Price:</span>
-                            <span className="text-sm text-gray-500 line-through">₹{product.originalMrp.toLocaleString()}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-xs text-green-600 font-extrabold bg-green-100 border border-green-200 px-2.5 py-1 rounded-md">
+                    {/* Price and Actions */}
+                    <div className="flex flex-col pt-4 border-t border-gray-200 mt-4 gap-4">
+                      <div>
+                        {product.originalMrp && product.discountPercent && product.discountPercent > 0 ? (
+                          <div className="space-y-1">
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                              <span className="text-2xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                                ₹{product.price.toLocaleString()}
+                              </span>
+                              <span className="text-sm text-gray-400 line-through">
+                                ₹{product.originalMrp.toLocaleString()}
+                              </span>
+                            </div>
+                            <span className="inline-block text-[10px] font-extrabold bg-green-500/10 border border-green-500/20 text-green-600 px-2 py-0.5 rounded-md">
                               {product.discountPercent}% OFF
                             </span>
                           </div>
-                        </div>
-                      )}
-
-                      <div className="flex gap-3">
-                        <Link href={`/products/${product.id}`} className="flex-1">
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="w-full p-3 bg-gray-150 hover:bg-gray-200 rounded-xl transition font-bold text-gray-900 flex items-center justify-center gap-2 cursor-pointer"
-                          >
-                            <Eye className="w-5 h-5" />
-                            View
-                          </motion.button>
-                        </Link>
+                        ) : (
+                          <p className="text-3xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                            ₹{product.price.toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="w-full">
                         <motion.button
-                          whileHover={product.stock > 0 ? { scale: 1.05 } : {}}
-                          whileTap={product.stock > 0 ? { scale: 0.95 } : {}}
+                          whileHover={product.stock > 0 ? { scale: 1.02 } : {}}
+                          whileTap={product.stock > 0 ? { scale: 0.98 } : {}}
                           disabled={product.stock <= 0}
-                          onClick={() => handleAddToCart(product, selectedFlavors[product.id] || product.flavors[0])}
-                          className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 disabled:text-gray-300 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(product, selectedFlavors[product.sku || product.id] || product.flavors[0]);
+                          }}
+                          className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 disabled:text-gray-300 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg cursor-pointer"
                         >
                           <ShoppingCart className="w-5 h-5" />
-                          {product.stock <= 0 ? 'Out' : 'Add'}
+                          {product.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
                         </motion.button>
                       </div>
                     </div>

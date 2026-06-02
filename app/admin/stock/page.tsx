@@ -16,6 +16,7 @@ interface StockProduct {
   images: string[];
   originalMrp?: number;
   discountPercent?: number;
+  sku?: string;
 }
 
 export default function AdminStock() {
@@ -45,6 +46,7 @@ export default function AdminStock() {
           images: data.images || [],
           originalMrp: data.originalMrp,
           discountPercent: data.discountPercent,
+          sku: data.sku,
         });
       });
       // Sort by stock ascending (low stock first)
@@ -215,7 +217,7 @@ export default function AdminStock() {
                               </div>
                               <div>
                                 <p className="text-white font-bold text-sm line-clamp-1">{product.name}</p>
-                                <p className="text-gray-500 text-xs font-mono mt-0.5">ID: {product.id.slice(0, 8)}...</p>
+                                <p className="text-green-400 text-xs font-mono mt-0.5 font-bold">SKU: {product.sku || 'N/A'}</p>
                               </div>
                             </div>
                           </td>

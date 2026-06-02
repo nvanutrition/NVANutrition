@@ -310,20 +310,27 @@ export default function CheckoutPage() {
       customerName: formData.fullName,
       email: formData.email,
       phone: formData.phone,
-      alternatePhone: formData.alternatePhone || '',
-      address: formData.address,
-      city: formData.city,
-      state: formData.state,
-      pincode: formData.pincode,
+      // Nested address object — required by admin order detail and user account views
+      address: {
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        pinCode: formData.pincode,
+        alternatePhone: formData.alternatePhone || '',
+      },
       notes: formData.notes,
+      paymentMethod: pMethod === 'COD' ? 'COD' : 'Online',
       items: [
         ...items.map(item => ({
           id: item.id,
           name: item.name,
           price: item.price,
+          originalPrice: (item as any).originalPrice || item.price,
           quantity: item.quantity,
           flavor: item.flavor || '',
           unit: (item as any).unit || '',
+          image: (item as any).image || '',
+          sku: item.id,
           isPromo: false,
         })),
         ...freeGifts.map(gift => ({
@@ -333,6 +340,7 @@ export default function CheckoutPage() {
           quantity: gift.quantity,
           flavor: '',
           unit: '',
+          image: '',
           isPromo: true,
         }))
       ],
@@ -362,16 +370,11 @@ export default function CheckoutPage() {
             customerName: formData.fullName,
             email: formData.email,
             phone: formData.phone,
-            address: {
-              address: formData.address,
-              city: formData.city,
-              state: formData.state,
-              pinCode: formData.pincode,
-              alternatePhone: formData.alternatePhone,
-            },
+            address: orderPayload.address,
             items: orderPayload.items,
             totalAmount: finalTotal,
             discountAmount: discountAmount,
+            paymentMethod: pMethod === 'COD' ? 'COD' : 'Online',
           })
         });
       } catch (emailErr) {
