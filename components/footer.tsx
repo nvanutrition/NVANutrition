@@ -31,7 +31,7 @@ export function Footer() {
             <ul className="space-y-2 text-gray-400 text-sm">
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-green-600" />
-                +91 9876543210
+                +91 9508716607
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-green-600" />
@@ -39,7 +39,7 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-green-600" />
-                Mumbai, India
+                Noida, India
               </li>
             </ul>
           </div>
