@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Facebook, Instagram, Linkedin, Twitter, Mail, Phone, MapPin } from 'lucide-react';
+import Image from 'next/image';
 
 export function Footer() {
   return (
@@ -10,7 +11,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div>
-            <h2 className="text-2xl font-bold text-green-500 mb-4">NVA Nutrition</h2>
+            <Image src="/logo.png" alt="NVA Nutrition" width={200} height={80} className="w-auto h-16 mb-4 object-contain" />
             <p className="text-gray-300">Fuel Your Performance. Transform Your Body.</p>
           </div>
 

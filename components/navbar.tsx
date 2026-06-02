@@ -9,6 +9,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { MarqueeTicker } from './marquee-ticker';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
@@ -71,10 +72,8 @@ export function Navbar() {
 
             {/* Logo */}
             <Link href="/" className="flex-shrink-0 flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-green-500/20">
-                <span className="text-white font-bold text-sm">NVA</span>
-              </div>
-              <span className="text-lg font-bold text-white hidden sm:inline tracking-tight">NVA NUTRITION</span>
+              <Image src="/logo.png" alt="NVA Nutrition" width={160} height={60} className="w-auto h-12 md:h-10 object-contain" priority />
+              <span className="text-lg font-bold text-white hidden md:inline tracking-tight">NVA NUTRITION</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -214,10 +213,7 @@ export function Navbar() {
               {/* Drawer Header */}
               <div className="flex items-center justify-between px-6 pt-6 pb-5 border-b border-white/10">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-xs">NVA</span>
-                  </div>
-                  <span className="text-white font-bold">NVA NUTRITION</span>
+                  <Image src="/logo.png" alt="NVA Nutrition" width={120} height={40} className="w-auto h-8 object-contain" />
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}

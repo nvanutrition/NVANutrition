@@ -25,6 +25,9 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
+  icons: {
+    icon: '/logo.png',
+  },
   openGraph: {
     title: 'NVA Nutrition | Premium Sports Nutrition',
     description: 'Built for Hustlers. Powered by NVA Nutrition. Premium Protein & Sports Nutrition for Champions.',

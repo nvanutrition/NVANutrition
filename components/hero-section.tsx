@@ -38,9 +38,9 @@ function useCounter(end: number, duration: number = 2000, startOnView: boolean =
 }
 
 const stats = [
-  { icon: Users, value: 50000, suffix: '+', label: 'Happy Customers', prefix: '' },
-  { icon: TrendingUp, value: 100, suffix: '+', label: 'Cities Served', prefix: '' },
-  { icon: Zap, value: 1000000, suffix: '+', label: 'Servings Delivered', prefix: '' },
+  { icon: Users, value: 200, suffix: '+', label: 'Happy Customers', prefix: '' },
+  { icon: TrendingUp, value: 10, suffix: '+', label: 'Cities Served', prefix: '' },
+  { icon: Zap, value: 3000, suffix: '+', label: 'Servings Delivered', prefix: '' },
   { icon: Star, value: 4.9, suffix: '★', label: 'Customer Rating', prefix: '', isDecimal: true },
 ];
 
