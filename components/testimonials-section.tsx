@@ -6,75 +6,68 @@ import { Star, ShieldCheck, Quote } from 'lucide-react';
 
 const testimonials = [
   {
-    name: 'Rajesh Kumar',
-    role: 'Competitive Fitness Athlete',
-    image: '/athlete-testimonial.png',
+    name: 'Karan Shergill',
+    role: 'Competitive Bodybuilder',
+    image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=200&auto=format&fit=crop',
     rating: 5,
-    text: 'NVA Nutrition has completely changed my competition prep. The purity of the Iso-Whey is outstanding — my muscle fullness and recovery speeds have hit completely new heights.',
-    achievement: '1st Place Men\'s Physique'
+    text: "Switching to NVA Nutrition's isolate completely changed my prep. The absolute lack of bloating and incredible mixability is exactly what I need during peak week. It's the cleanest protein I've used in India.",
+    achievement: "1st Place Men's Physique",
+    color: 'border-green-200 bg-green-50/50',
+    badge: 'from-green-500 to-emerald-600',
   },
   {
-    name: 'Priya Singh',
+    name: 'Sneha Rao',
     role: 'National Level Powerlifter',
-    image: '/athlete-testimonial.png',
+    image: 'https://images.unsplash.com/photo-1608223661148-d3e3becc8245?q=80&w=200&auto=format&fit=crop',
     rating: 5,
-    text: 'Most proteins taste artificial or feel heavy. NVA Nutrition formulated a clean product that digests flawlessly and supports my aggressive strength goals. Recommended without hesitation.',
-    achievement: 'Elite Powerlifter'
+    text: "As a powerlifter, muscle recovery is my top priority. Most proteins are heavy and digest poorly. NVA's formulation absorbs so cleanly, and my strength gains have been noticeably more consistent since I made the switch.",
+    achievement: 'Elite Powerlifter',
+    color: 'border-blue-200 bg-blue-50/50',
+    badge: 'from-blue-500 to-indigo-600',
   },
   {
-    name: 'Arjun Patel',
-    role: 'Head Strength Coach & Nutritionist',
-    image: '/athlete-testimonial.png',
+    name: 'Rahul Khanna',
+    role: 'Head Strength Coach',
+    image: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=200&auto=format&fit=crop',
     rating: 5,
-    text: 'I put my elite clients on NVA Nutrition products because lab integrity and heavy metal testing are critical. Every batch delivers exactly what is on the label. Unbeatable purity.',
-    achievement: 'Certified Strength Coach'
+    text: "I mandate NVA Nutrition for all my elite clients. The heavy metal testing and strict label accuracy give me total peace of mind. Every scoop delivers exactly the macros promised. It's unmatched purity.",
+    achievement: 'Certified Strength Coach',
+    color: 'border-purple-200 bg-purple-50/50',
+    badge: 'from-purple-500 to-pink-600',
   },
 ];
 
 export function TestimonialsSection() {
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.12, delayChildren: 0.1 },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
   };
 
   const cardVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
-      opacity: 1,
-      y: 0,
+      opacity: 1, y: 0,
       transition: { duration: 0.6, ease: [0.25, 1, 0.5, 1] as [number, number, number, number] },
     },
   };
 
   return (
-    <section className="relative py-28 overflow-hidden bg-nv-dark text-white border-b border-white/5">
-      {/* Background Orbs */}
-      <div className="absolute top-1/4 -right-32 w-[500px] h-[500px] rounded-full bg-green-500/5 blur-[100px] pointer-events-none" />
-      <div className="absolute -bottom-32 -left-32 w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[100px] pointer-events-none" />
-
-      {/* Grid Pattern */}
-      <div className="absolute inset-0 opacity-[0.02] pointer-events-none"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`,
-          backgroundSize: '80px 80px',
-        }}
-      />
+    <section className="relative py-24 overflow-hidden bg-gray-50">
+      {/* Decorative blobs */}
+      <div className="absolute top-0 right-0 w-80 h-80 bg-green-200/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-200/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
         {/* Section Header */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-16">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full border border-white/5 mb-6"
+            className="inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-5 py-2 mb-5"
           >
-            <ShieldCheck size={14} className="text-green-400" />
-            <span className="text-green-400 font-bold text-xs tracking-[0.2em] uppercase">Trusted by Pros</span>
+            <ShieldCheck size={14} className="text-green-600" />
+            <span className="text-green-700 font-black text-xs tracking-widest uppercase">Trusted by Pros</span>
           </motion.div>
 
           <motion.h2
@@ -82,9 +75,12 @@ export function TestimonialsSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-4xl md:text-5xl font-black tracking-tight text-white mb-6 uppercase"
+            className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 mb-5"
           >
-            Endorsed by Elite Athletes
+            Endorsed by<br />
+            <span className="bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
+              Elite Athletes
+            </span>
           </motion.h2>
 
           <motion.p
@@ -92,9 +88,9 @@ export function TestimonialsSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="text-lg text-gray-400 max-w-2xl mx-auto font-light"
+            className="text-gray-500 text-lg max-w-2xl mx-auto"
           >
-            We don&apos;t just pay for testimonials. We fuel competitors who demand the cleanest protein formulations to power their international performance.
+            We don&apos;t pay for endorsements — we fuel competitors who demand the cleanest protein formulations for international performance.
           </motion.p>
         </div>
 
@@ -104,43 +100,43 @@ export function TestimonialsSection() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
         >
           {testimonials.map((testimonial, index) => (
             <motion.div
               key={index}
               variants={cardVariants}
-              whileHover={{ y: -8, transition: { duration: 0.2 } }}
-              className="group relative bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md hover:bg-white/10 hover:border-green-500/20 transition-all duration-300 flex flex-col cursor-default"
+              whileHover={{ y: -6, transition: { duration: 0.2 } }}
+              className={`group relative bg-white border-2 ${testimonial.color} rounded-3xl p-8 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.1)] transition-all duration-300 flex flex-col cursor-default`}
             >
-              {/* Quote Graphic Overlay */}
-              <div className="absolute top-6 right-8 text-white/5 pointer-events-none group-hover:text-green-500/10 transition-colors">
-                <Quote size={60} />
+              {/* Giant Quote Mark */}
+              <div className="absolute top-6 right-6 text-gray-100 group-hover:text-green-100 transition-colors pointer-events-none">
+                <Quote size={56} />
               </div>
 
-              {/* Verified Badge */}
-              <div className="flex justify-between items-center mb-6">
+              {/* Stars + Verified badge */}
+              <div className="flex items-center justify-between mb-5">
                 <div className="flex gap-1">
                   {Array.from({ length: testimonial.rating }).map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-green-400 text-green-400 shadow-[0_0_8px_#00c853]" />
+                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                <span className="text-[10px] tracking-wider uppercase font-semibold text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <ShieldCheck size={10} /> Verified Athlete
+                <span className="text-[10px] tracking-wider uppercase font-bold text-green-700 bg-green-100 border border-green-200 px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <ShieldCheck size={10} /> Verified
                 </span>
               </div>
 
               {/* Review Text */}
-              <p className="text-gray-300 text-sm md:text-base leading-relaxed font-light mb-8 italic flex-grow">
+              <p className="text-gray-600 text-sm leading-relaxed mb-7 flex-grow italic relative z-10">
                 &ldquo;{testimonial.text}&rdquo;
               </p>
 
               {/* Divider */}
-              <div className="w-full h-[1px] bg-white/10 mb-6" />
+              <div className="w-full h-px bg-gray-100 mb-5" />
 
-              {/* Profile Block */}
+              {/* Profile */}
               <div className="flex items-center gap-4">
-                <div className="relative w-14 h-14 rounded-2xl overflow-hidden border border-white/10 group-hover:border-green-500/30 transition-colors">
+                <div className={`relative w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-offset-2 bg-gradient-to-br ${testimonial.badge}`}>
                   <Image
                     src={testimonial.image}
                     alt={testimonial.name}
@@ -150,20 +146,16 @@ export function TestimonialsSection() {
                   />
                 </div>
                 <div>
-                  <h4 className="font-bold text-white tracking-wide">{testimonial.name}</h4>
-                  <p className="text-xs text-green-400 font-semibold tracking-wider uppercase">{testimonial.role}</p>
-                  
-                  {/* Achievement Subtitle */}
-                  <span className="inline-block mt-1 text-[9px] text-gray-500 font-mono tracking-widest uppercase">
+                  <h4 className="font-black text-gray-900 text-sm">{testimonial.name}</h4>
+                  <p className="text-xs text-gray-500 font-medium">{testimonial.role}</p>
+                  <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-amber-600 font-black uppercase tracking-wider">
                     🏆 {testimonial.achievement}
                   </span>
                 </div>
               </div>
-
             </motion.div>
           ))}
         </motion.div>
-
       </div>
     </section>
   );

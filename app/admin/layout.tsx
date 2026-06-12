@@ -5,20 +5,20 @@ import { AdminSidebar } from '@/components/admin/sidebar';
 import { useState } from 'react';
 
 export default function AdminLayout({
-  children,
+ children,
 }: {
-  children: React.ReactNode;
+ children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+ const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  return (
-    <ProtectedRoute requiredRole="admin">
-      <div className="flex h-screen bg-gradient-dark">
-        <AdminSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="flex-1 overflow-y-auto bg-gradient-dark border-l border-white/10">
-          {children}
-        </main>
-      </div>
-    </ProtectedRoute>
-  );
+ return (
+ <ProtectedRoute requiredRole="admin">
+ <div className="flex h-screen bg-gradient-dark">
+ <AdminSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+ <main className="flex-1 overflow-y-auto bg-gradient-dark border-l border-border">
+ {children}
+ </main>
+ </div>
+ </ProtectedRoute>
+ );
 }

@@ -3,6 +3,7 @@
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { HeroSection } from '@/components/hero-section';
+
 import { FeaturedProductsSection } from '@/components/featured-products';
 import dynamic from 'next/dynamic';
 
@@ -13,17 +14,17 @@ const TestimonialsSection = dynamic(() => import('@/components/testimonials-sect
 const NewsletterSection = dynamic(() => import('@/components/newsletter-section').then(mod => mod.NewsletterSection));
 
 export default function Page() {
-  return (
-    <main>
-      <Navbar />
-      <HeroSection />
-      <MotivationSection />
-      <FeaturedProductsSection />
-      <BenefitsSection />
-      <TransformationSection />
-      <TestimonialsSection />
-      <NewsletterSection />
-      <Footer />
-    </main>
-  );
+ return (
+ <main>
+ <Navbar />
+ <HeroSection />
+ <FeaturedProductsSection />
+ <MotivationSection />
+ <BenefitsSection />
+ <TransformationSection />
+ <TestimonialsSection />
+ <NewsletterSection />
+ <Footer />
+ </main>
+ );
 }

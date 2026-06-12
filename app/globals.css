@@ -10,76 +10,46 @@
   --nv-gray: #F5F5F5;
   --nv-white: #FFFFFF;
 
-  /* Light Mode */
-  --background: 0 0% 99%;
-  --foreground: 0 0% 8%;
+  /* Light Mode – Pure white premium theme with dark contrasting text */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 0%;
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 8%;
+  --card-foreground: 0 0% 0%;
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 8%;
-  --primary: 145 100% 39%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 145 80% 36%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 18%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 0 0% 94%;
-  --muted-foreground: 0 0% 50%;
-  --accent: 145 100% 39%;
-  --accent-foreground: 0 0% 100%;
+  --secondary: 145 20% 94%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 145 10% 95%;
+  --muted-foreground: 0 0% 30%;
+  --accent: 145 60% 92%;
+  --accent-foreground: 0 0% 0%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   --border: 0 0% 90%;
-  --input: 0 0% 96%;
-  --ring: 145 100% 39%;
-  --chart-1: 145 100% 39%;
-  --chart-2: 200 100% 50%;
-  --chart-3: 280 100% 50%;
-  --chart-4: 20 100% 50%;
-  --chart-5: 100 100% 50%;
+  --input: 40 20% 95%;
+  --ring: 145 80% 36%;
+  --chart-1: 145 80% 36%;
+  --chart-2: 200 80% 45%;
+  --chart-3: 280 70% 50%;
+  --chart-4: 20 90% 50%;
+  --chart-5: 100 80% 40%;
   --radius: 0.75rem;
   --sidebar: 0 0% 100%;
-  --sidebar-foreground: 0 0% 18%;
-  --sidebar-primary: 145 100% 39%;
+  --sidebar-foreground: 220 20% 15%;
+  --sidebar-primary: 145 80% 36%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 94%;
-  --sidebar-accent-foreground: 145 100% 39%;
-  --sidebar-border: 0 0% 90%;
-  --sidebar-ring: 145 100% 39%;
+  --sidebar-accent: 145 30% 94%;
+  --sidebar-accent-foreground: 145 60% 25%;
+  --sidebar-border: 40 15% 87%;
+  --sidebar-ring: 145 80% 36%;
+  /* Light-mode section overrides */
+  --hero-bg: linear-gradient(135deg, #ffffff 0%, #f4fdf7 50%, #e8f8ed 100%);
+  --hero-text: #051a0b;
 }
 
-.dark {
-  --background: 0 0% 4%;
-  --foreground: 0 0% 98%;
-  --card: 0 0% 6%;
-  --card-foreground: 0 0% 98%;
-  --popover: 0 0% 6%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 145 100% 50%;
-  --primary-foreground: 0 0% 4%;
-  --secondary: 0 0% 96%;
-  --secondary-foreground: 0 0% 6%;
-  --muted: 0 0% 18%;
-  --muted-foreground: 0 0% 70%;
-  --accent: 145 100% 50%;
-  --accent-foreground: 0 0% 4%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 18%;
-  --input: 0 0% 12%;
-  --ring: 145 100% 50%;
-  --chart-1: 145 100% 50%;
-  --chart-2: 200 100% 60%;
-  --chart-3: 280 100% 60%;
-  --chart-4: 20 100% 60%;
-  --chart-5: 100 100% 60%;
-  --sidebar: 0 0% 6%;
-  --sidebar-foreground: 0 0% 96%;
-  --sidebar-primary: 145 100% 50%;
-  --sidebar-primary-foreground: 0 0% 4%;
-  --sidebar-accent: 0 0% 18%;
-  --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-border: 0 0% 18%;
-  --sidebar-ring: 145 100% 50%;
-}
+
 
 @theme inline {
   --font-sans: 'Geist', 'Inter', system-ui, -apple-system, sans-serif;
@@ -341,10 +311,10 @@
   }
 
   .glass-dark {
-    background: rgba(10, 10, 10, 0.75);
+    background: rgba(255, 255, 255, 0.75);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
   }
 
   .glass-green {
@@ -364,11 +334,11 @@
   }
 
   .bg-gradient-dark {
-    background: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 50%, #0F0F0F 100%);
+    background: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 50%, #EAEAEA 100%);
   }
 
   .bg-gradient-hero {
-    background: linear-gradient(135deg, #0A0A0A 0%, #0D1B0F 40%, #0A0A0A 100%);
+    background: linear-gradient(135deg, #FFFFFF 0%, #F4FDF7 50%, #E8F8ED 100%);
   }
 
   .text-gradient-green {
@@ -449,3 +419,18 @@
     background: rgba(0, 200, 83, 0.5);
   }
 }
+
+/* ========================================
+   LIGHT MODE OVERRIDES
+   ======================================== */
+
+/* Smooth theme transition */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
