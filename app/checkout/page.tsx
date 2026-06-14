@@ -108,6 +108,141 @@ export default function CheckoutPage() {
 
   const finalTotal = Math.max(0, totalPrice - discountAmount);
 
+  // Generate NVA-XXXXX-XXXXX order ID
+  const generateOrderId = () => {
+    const chars = '0123456789';
+    const rand5 = () => Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    return `NVA-${rand5()}-${rand5()}`;
+  };
+
+  // Internal placeOrder — accepts current form data snapshot
+  const placeOrderInternal = async (
+    pMethod: 'COD' | 'Cashfree',
+    finalPaymentStatus: 'Pending' | 'Paid',
+    formSnapshot?: FormData
+  ) => {
+    setIsLoading(true);
+    const orderNum = generateOrderId();
+    setOrderNumber(orderNum);
+
+    const fd = formSnapshot || formData;
+
+    const orderPayload = {
+      orderId: orderNum,
+      customerName: fd.fullName,
+      email: fd.email,
+      phone: fd.phone,
+      address: {
+        address: fd.address,
+        city: fd.city,
+        state: fd.state,
+        pinCode: fd.pincode,
+        alternatePhone: fd.alternatePhone || '',
+      },
+      notes: fd.notes,
+      paymentMethod: pMethod === 'COD' ? 'COD' : 'Online',
+      items: [
+        ...items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          originalPrice: (item as any).originalPrice || item.price,
+          quantity: item.quantity,
+          flavor: item.flavor || '',
+          unit: (item as any).unit || '',
+          image: (item as any).image || '',
+          sku: item.id,
+          isPromo: false,
+        })),
+        ...freeGifts.map(gift => ({
+          id: gift.sku,
+          name: gift.name,
+          price: 0,
+          quantity: gift.quantity,
+          flavor: '',
+          unit: '',
+          image: '',
+          isPromo: true,
+        }))
+      ],
+      totalAmount: finalTotal,
+      discountAmount: discountAmount,
+      paymentStatus: finalPaymentStatus,
+      orderStatus: 'Pending',
+    };
+
+    try {
+      // 1. Write order to Firestore
+      await setDoc(doc(db, 'orders', orderNum), {
+        ...orderPayload,
+        userId: user?.uid || 'guest',
+        status: 'Pending',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // 2. Send confirmation email
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: orderNum,
+            customerName: fd.fullName,
+            email: fd.email,
+            phone: fd.phone,
+            address: orderPayload.address,
+            items: orderPayload.items,
+            totalAmount: finalTotal,
+            discountAmount: discountAmount,
+            paymentMethod: pMethod === 'COD' ? 'COD' : 'Online',
+          })
+        });
+      } catch (emailErr) {
+        console.error('Failed to send confirmation email:', emailErr);
+      }
+
+      // 3. Decrement stock for each purchased item in Firestore
+      for (const item of items) {
+        try {
+          const productRef = doc(db, 'products', item.id);
+          const productSnap = await getDoc(productRef);
+          if (productSnap.exists()) {
+            const currentStock = productSnap.data().stock || 0;
+            const newStock = Math.max(0, currentStock - item.quantity);
+            await updateDoc(productRef, { stock: newStock });
+            console.log(`[Stock] Updated ${item.name}: ${currentStock} → ${newStock}`);
+          }
+        } catch (stockErr) {
+          console.error(`[Stock] Failed to decrement for item ${item.id}:`, stockErr);
+        }
+      }
+
+      // 4. Send order details to Google Sheets (if configured)
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload),
+      });
+
+      // 5. Clear saved form + cart, show success
+      sessionStorage.removeItem('checkout_form');
+      toast.success(pMethod === 'COD' ? 'Order placed successfully!' : 'Payment received & order confirmed!');
+      setShowSuccess(true);
+      setCurrentStep(3);
+      clearCart();
+    } catch (err) {
+      console.error('Order placement error:', err);
+      toast.error('Failed to submit order. Please check connection.');
+      setIsLoading(false);
+    }
+  };
+
+  // Wrapper for use in event handlers (uses current formData state)
+  const placeOrder = (pMethod: 'COD' | 'Cashfree', finalPaymentStatus: 'Pending' | 'Paid') => {
+    return placeOrderInternal(pMethod, finalPaymentStatus);
+  };
+
   // ─── Handle Cashfree return redirect ───────────────────────────────────────
   useEffect(() => {
     const cfOrderId = searchParams.get('cf_order_id');
@@ -328,141 +463,7 @@ export default function CheckoutPage() {
     setCurrentStep(2);
   };
 
-  // Generate NVA-XXXXX-XXXXX order ID
-  const generateOrderId = () => {
-    const chars = '0123456789';
-    const rand5 = () => Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-    return `NVA-${rand5()}-${rand5()}`;
-  };
 
-  // Internal placeOrder — accepts current form data snapshot
-  const placeOrderInternal = async (
-    pMethod: 'COD' | 'Cashfree',
-    finalPaymentStatus: 'Pending' | 'Paid',
-    formSnapshot?: FormData
-  ) => {
-    setIsLoading(true);
-    const orderNum = generateOrderId();
-    setOrderNumber(orderNum);
-
-    const fd = formSnapshot || formData;
-
-    const orderPayload = {
-      orderId: orderNum,
-      customerName: fd.fullName,
-      email: fd.email,
-      phone: fd.phone,
-      address: {
-        address: fd.address,
-        city: fd.city,
-        state: fd.state,
-        pinCode: fd.pincode,
-        alternatePhone: fd.alternatePhone || '',
-      },
-      notes: fd.notes,
-      paymentMethod: pMethod === 'COD' ? 'COD' : 'Online',
-      items: [
-        ...items.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          originalPrice: (item as any).originalPrice || item.price,
-          quantity: item.quantity,
-          flavor: item.flavor || '',
-          unit: (item as any).unit || '',
-          image: (item as any).image || '',
-          sku: item.id,
-          isPromo: false,
-        })),
-        ...freeGifts.map(gift => ({
-          id: gift.sku,
-          name: gift.name,
-          price: 0,
-          quantity: gift.quantity,
-          flavor: '',
-          unit: '',
-          image: '',
-          isPromo: true,
-        }))
-      ],
-      totalAmount: finalTotal,
-      discountAmount: discountAmount,
-      paymentStatus: finalPaymentStatus,
-      orderStatus: 'Pending',
-    };
-
-    try {
-      // 1. Write order to Firestore
-      await setDoc(doc(db, 'orders', orderNum), {
-        ...orderPayload,
-        userId: user?.uid || 'guest',
-        status: 'Pending',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-      // 2. Send confirmation email
-      try {
-        await fetch('/api/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: orderNum,
-            customerName: fd.fullName,
-            email: fd.email,
-            phone: fd.phone,
-            address: orderPayload.address,
-            items: orderPayload.items,
-            totalAmount: finalTotal,
-            discountAmount: discountAmount,
-            paymentMethod: pMethod === 'COD' ? 'COD' : 'Online',
-          })
-        });
-      } catch (emailErr) {
-        console.error('Failed to send confirmation email:', emailErr);
-      }
-
-      // 3. Decrement stock for each purchased item in Firestore
-      for (const item of items) {
-        try {
-          const productRef = doc(db, 'products', item.id);
-          const productSnap = await getDoc(productRef);
-          if (productSnap.exists()) {
-            const currentStock = productSnap.data().stock || 0;
-            const newStock = Math.max(0, currentStock - item.quantity);
-            await updateDoc(productRef, { stock: newStock });
-            console.log(`[Stock] Updated ${item.name}: ${currentStock} → ${newStock}`);
-          }
-        } catch (stockErr) {
-          console.error(`[Stock] Failed to decrement for item ${item.id}:`, stockErr);
-        }
-      }
-
-      // 4. Send order details to Google Sheets (if configured)
-      await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload),
-      });
-
-      // 5. Clear saved form + cart, show success
-      sessionStorage.removeItem('checkout_form');
-      toast.success(pMethod === 'COD' ? 'Order placed successfully!' : 'Payment received & order confirmed!');
-      setShowSuccess(true);
-      setCurrentStep(3);
-      clearCart();
-    } catch (err) {
-      console.error('Order placement error:', err);
-      toast.error('Failed to submit order. Please check connection.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Wrapper for use in event handlers (uses current formData state)
-  const placeOrder = (pMethod: 'COD' | 'Cashfree', finalPaymentStatus: 'Pending' | 'Paid') => {
-    return placeOrderInternal(pMethod, finalPaymentStatus);
-  };
 
   // ─── Handle Cashfree Online Payment ────────────────────────────────────────
   const handleCashfreePayment = async () => {
