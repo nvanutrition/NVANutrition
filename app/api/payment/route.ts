@@ -1,67 +1,91 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Cashfree, CFEnvironment } from 'cashfree-pg';
+
+function getCashfreeClient() {
+  const appId = process.env.CASHFREE_APP_ID!;
+  const secretKey = process.env.CASHFREE_SECRET_KEY!;
+  const isProd = process.env.NEXT_PUBLIC_CASHFREE_ENV === 'production';
+  const env = isProd ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
+  return new (Cashfree as any)(env, appId, secretKey);
+}
 
 export async function POST(request: NextRequest) {
- try {
- const { amount, orderId } = await request.json();
+  try {
+    const { amount, orderId, customerName, customerEmail, customerPhone } =
+      await request.json();
 
- if (!amount || !orderId) {
- return NextResponse.json(
- { success: false, error: 'Amount and OrderId are required' },
- { status: 400 }
- );
- }
+    if (!amount || !orderId) {
+      return NextResponse.json(
+        { success: false, error: 'Amount and OrderId are required' },
+        { status: 400 }
+      );
+    }
 
- const keyId = process.env.RAZORPAY_KEY_ID;
- const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const appId = process.env.CASHFREE_APP_ID;
+    const secretKey = process.env.CASHFREE_SECRET_KEY;
 
- // If Razorpay keys are configured, attempt to use the official SDK
- if (keyId && keySecret) {
- try {
- // Dynamic import to avoid issues if the package is not installed yet
- const Razorpay = (await import('razorpay')).default;
- const razorpay = new Razorpay({
- key_id: keyId,
- key_secret: keySecret,
- });
+    if (!appId || !secretKey) {
+      return NextResponse.json(
+        { success: false, error: 'Payment gateway not configured' },
+        { status: 500 }
+      );
+    }
 
- const order = await razorpay.orders.create({
- amount: Math.round(amount * 100), // convert to paise
- currency: 'INR',
- receipt: orderId,
- payment_capture: 1 as any,
- }) as any;
+    const cashfree = getCashfreeClient();
 
- return NextResponse.json({
- success: true,
- gateway: 'razorpay',
- keyId: keyId,
- orderId: order.id,
- amount: order.amount,
- currency: order.currency,
- });
- } catch (sdkError) {
- console.error('[Razorpay SDK Error] Falling back to sandbox:', sdkError);
- }
- }
+    // Always use the production site URL for the return URL (must be HTTPS for production Cashfree)
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      'https://www.nvanutrition.in';
 
- // Sandbox / Simulation Mode (if credentials are empty or SDK errors out)
- const simulatedOrderId = 'rzp_order_' + Math.random().toString(36).substring(2, 14);
- 
- return NextResponse.json({
- success: true,
- gateway: 'sandbox',
- keyId: 'rzp_test_sandbox_key',
- orderId: simulatedOrderId,
- amount: Math.round(amount * 100),
- currency: 'INR',
- message: 'Running in simulated Premium Sandbox Mode',
- });
+    // Clean phone: digits only, 10 chars
+    const cleanPhone =
+      (customerPhone || '').replace(/\D/g, '').slice(0, 10) || '9999999999';
 
- } catch (error) {
- console.error('Error creating payment order:', error);
- return NextResponse.json(
- { success: false, error: 'Internal Server Error' },
- { status: 500 }
- );
- }
+    const orderRequest = {
+      order_id: orderId,
+      order_amount: Number(amount),
+      order_currency: 'INR',
+      customer_details: {
+        customer_id: `cust_${orderId}`,
+        customer_name: customerName || 'NVA Customer',
+        customer_email: customerEmail || 'customer@nvanutrition.in',
+        customer_phone: cleanPhone,
+      },
+      order_meta: {
+        return_url: `${siteUrl}/checkout?cf_order_id={order_id}`,
+        notify_url: `${siteUrl}/api/payment/webhook`,
+      },
+    };
+
+    const response = await cashfree.PGCreateOrder(orderRequest);
+
+    if (!response?.data?.payment_session_id) {
+      console.error('[Cashfree] Missing payment_session_id:', response?.data);
+      return NextResponse.json(
+        { success: false, error: 'Failed to create payment session' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      payment_session_id: response.data.payment_session_id,
+      cf_order_id: response.data.cf_order_id,
+      order_id: response.data.order_id,
+    });
+  } catch (error: any) {
+    const errData = error?.response?.data;
+    console.error(
+      '[Cashfree] Order creation error:',
+      errData ? JSON.stringify(errData) : error?.message
+    );
+    return NextResponse.json(
+      {
+        success: false,
+        error: errData?.message || 'Payment initialization failed. Please try again.',
+      },
+      { status: 500 }
+    );
+  }
 }
