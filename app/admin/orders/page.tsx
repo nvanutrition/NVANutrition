@@ -32,13 +32,13 @@ const statusConfig: Record<string, { badge: string; dot: string }> = {
 };
 
 const tabColors: Record<string, string> = {
-  All:        'border-gray-300 text-gray-700',
-  Pending:    'border-amber-400 text-amber-700 bg-amber-50',
-  Processing: 'border-blue-400 text-blue-700 bg-blue-50',
-  Shipped:    'border-purple-400 text-purple-700 bg-purple-50',
-  Delivered:  'border-green-400 text-green-700 bg-green-50',
-  Cancelled:  'border-red-400 text-red-700 bg-red-50',
-  RTO:        'border-orange-400 text-orange-700 bg-orange-50',
+  All:        'bg-white text-gray-700 border-gray-200',
+  Pending:    'bg-amber-50 text-amber-700 border-amber-200',
+  Processing: 'bg-blue-50 text-blue-700 border-blue-200',
+  Shipped:    'bg-purple-50 text-purple-700 border-purple-200',
+  Delivered:  'bg-green-50 text-green-700 border-green-200',
+  Cancelled:  'bg-red-50 text-red-700 border-red-200',
+  RTO:        'bg-orange-50 text-orange-700 border-orange-200',
 };
 
 export default function AdminOrders() {
@@ -77,131 +77,124 @@ export default function AdminOrders() {
   const getCount = (s: string) => s === 'All' ? orders.length : orders.filter(o => o.status === s).length;
 
   return (
-    <div className="p-6 lg:p-8 bg-gray-50 min-h-screen">
+    <div className="p-4 sm:p-8 bg-[#fcfcfc] min-h-screen font-sans">
+      
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-center">
-            <ShoppingCart size={20} className="text-blue-600" />
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center shadow-lg">
+            <ShoppingCart size={20} className="text-white" />
           </div>
-          <h1 className="text-3xl font-black text-gray-900">Orders</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
         </div>
-        <p className="text-gray-500 text-sm ml-13">Manage customer orders and fulfillment</p>
+        <p className="text-gray-500 text-sm mt-1">Manage and track customer orders</p>
       </motion.div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Total', count: orders.length, icon: Package, color: 'text-gray-600', bg: 'bg-gray-50 border-gray-200' },
-          { label: 'Pending', count: orders.filter(o => o.status === 'Pending').length, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' },
-          { label: 'Shipped', count: orders.filter(o => o.status === 'Shipped').length, icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200' },
-          { label: 'Delivered', count: orders.filter(o => o.status === 'Delivered').length, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50 border-green-200' },
+          { label: 'Total Orders', count: orders.length, icon: Package, color: 'text-gray-900', bg: 'bg-gray-50' },
+          { label: 'Pending', count: orders.filter(o => o.status === 'Pending').length, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Shipped', count: orders.filter(o => o.status === 'Shipped').length, icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: 'Delivered', count: orders.filter(o => o.status === 'Delivered').length, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
         ].map(({ label, count, icon: Icon, color, bg }) => (
-          <div key={label} className={`bg-white rounded-2xl p-4 border shadow-sm flex items-center gap-3 ${bg}`}>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg}`}>
+          <motion.div key={label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`bg-white rounded-3xl p-5 border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg} mb-4`}>
               <Icon size={18} className={color} />
             </div>
             <div>
               <p className="text-2xl font-black text-gray-900">{count}</p>
-              <p className={`text-xs font-bold ${color}`}>{label}</p>
+              <p className={`text-xs font-bold uppercase tracking-wider text-gray-500`}>{label}</p>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
-      {/* Search + Tabs */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
-        {/* Search Bar */}
-        <div className="px-5 py-4 border-b border-gray-100">
-          <div className="relative">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+      {/* Search & Tabs Container */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+        
+        {/* Search */}
+        <div className="p-5 border-b border-gray-50">
+          <div className="relative max-w-md">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search by customer name, order ID, or phone..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-500/10 outline-none transition"
+              placeholder="Search order ID, customer name, or phone..."
+              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-gray-300 focus:ring-4 focus:ring-gray-100 transition"
             />
           </div>
         </div>
 
-        {/* Status Tabs */}
-        <div className="flex overflow-x-auto scrollbar-hide px-5 py-3 gap-2 border-b border-gray-100">
+        {/* Tabs */}
+        <div className="flex overflow-x-auto scrollbar-hide px-5 py-4 gap-2 border-b border-gray-50 bg-white">
           {statusOptions.map((s) => (
             <button
               key={s}
               onClick={() => setActiveTab(s)}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition border ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition border ${
                 activeTab === s
-                  ? `${tabColors[s]} border-current shadow-sm`
-                  : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                  ? `${tabColors[s]} shadow-sm`
+                  : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'
               }`}
             >
-              {s !== 'All' && statusConfig[s] && <span className={`w-1.5 h-1.5 rounded-full ${statusConfig[s].dot}`} />}
-              {s} <span className="opacity-60">({getCount(s)})</span>
+              {s !== 'All' && statusConfig[s] && <span className={`w-2 h-2 rounded-full ${statusConfig[s].dot}`} />}
+              {s} <span className="opacity-50 ml-1">({getCount(s)})</span>
             </button>
           ))}
         </div>
 
-        {/* Orders Table */}
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-500" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="py-16 text-center">
-            <Package size={40} className="mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-400 font-semibold">No orders found</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="px-5 py-3 text-left text-[11px] font-black text-gray-400 uppercase tracking-wider">Order ID</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-black text-gray-400 uppercase tracking-wider">Date</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-black text-gray-400 uppercase tracking-wider">Customer</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-black text-gray-400 uppercase tracking-wider">Items</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-black text-gray-400 uppercase tracking-wider">Amount</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-black text-gray-400 uppercase tracking-wider">Status</th>
-                  <th className="px-5 py-3 text-center text-[11px] font-black text-gray-400 uppercase tracking-wider">Action</th>
+        {/* Table */}
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-10 h-10 border-4 border-gray-100 border-t-black rounded-full animate-spin" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="py-20 text-center">
+              <Package size={40} className="mx-auto text-gray-200 mb-4" />
+              <p className="text-gray-500 font-semibold">No orders found.</p>
+            </div>
+          ) : (
+            <table className="w-full text-left">
+              <thead className="bg-gray-50/50 text-gray-400 text-xs uppercase tracking-wider font-semibold">
+                <tr>
+                  <th className="px-6 py-4 font-medium border-b border-gray-50">Order Details</th>
+                  <th className="px-6 py-4 font-medium border-b border-gray-50">Customer</th>
+                  <th className="px-6 py-4 font-medium border-b border-gray-50">Amount</th>
+                  <th className="px-6 py-4 font-medium border-b border-gray-50">Status</th>
+                  <th className="px-6 py-4 font-medium border-b border-gray-50 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((order, i) => {
                   const cfg = statusConfig[order.status] || { badge: 'bg-gray-50 text-gray-700 border-gray-200', dot: 'bg-gray-400' };
                   return (
-                    <motion.tr key={order.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-                      className="hover:bg-gray-50 transition group">
-                      <td className="px-5 py-4">
-                        <span className="text-gray-900 font-mono text-xs font-bold bg-gray-100 px-2 py-1 rounded-lg">
-                          {(order.orderId || order.id).slice(0, 16)}
-                        </span>
+                    <motion.tr key={order.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-gray-50/50 transition group">
+                      <td className="px-6 py-5">
+                        <p className="text-gray-900 font-mono text-sm font-bold mb-1">{(order.orderId || order.id).slice(0, 16)}...</p>
+                        <p className="text-xs text-gray-400 font-medium">
+                          {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-IN') : 'N/A'} • {order.items?.length || 0} item(s)
+                        </p>
                       </td>
-                      <td className="px-5 py-4 text-gray-500 text-sm">
-                        {order.createdAt?.toDate
-                          ? order.createdAt.toDate().toLocaleDateString('en-IN')
-                          : (order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN') : 'N/A')}
+                      <td className="px-6 py-5">
+                        <p className="text-gray-900 font-semibold text-sm mb-1">{order.customerName}</p>
+                        <p className="text-xs text-gray-400 font-medium">{order.phone}</p>
                       </td>
-                      <td className="px-5 py-4">
-                        <p className="text-gray-900 font-semibold text-sm">{order.customerName}</p>
-                        <p className="text-gray-400 text-xs">{order.phone}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="text-gray-500 text-sm font-medium">{order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}</span>
-                      </td>
-                      <td className="px-5 py-4">
+                      <td className="px-6 py-5">
                         <span className="text-gray-900 font-black text-sm">₹{(order.totalAmount || 0).toLocaleString()}</span>
                       </td>
-                      <td className="px-5 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${cfg.badge}`}>
+                      <td className="px-6 py-5">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold border uppercase tracking-wider ${cfg.badge}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                           {order.status}
                         </span>
                       </td>
-                      <td className="px-5 py-4 text-center">
-                        <Link href={`/admin/orders/${order.id}`}
-                          className="inline-flex items-center gap-1.5 bg-gray-100 hover:bg-green-50 hover:text-green-700 text-gray-600 px-3 py-1.5 rounded-xl text-xs font-bold transition border border-transparent hover:border-green-200">
-                          <Eye size={13} /> View
+                      <td className="px-6 py-5 text-right">
+                        <Link href={`/admin/orders/${order.id}`}>
+                          <button className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm inline-flex items-center gap-2">
+                            <Eye size={14} /> View
+                          </button>
                         </Link>
                       </td>
                     </motion.tr>
@@ -209,9 +202,9 @@ export default function AdminOrders() {
                 })}
               </tbody>
             </table>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }
