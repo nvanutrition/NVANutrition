@@ -126,68 +126,67 @@ export function FeaturedProductsSection() {
                 <motion.div
                   key={product.id}
                   variants={itemVariants}
-                  whileHover={{ y: -6, transition: { duration: 0.22 } }}
-                  className="group bg-white border border-gray-100 hover:border-green-200 rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.1)] transition-all duration-300 flex flex-col"
+                  className="bg-white rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:shadow-[0_20px_50px_rgba(16,185,129,0.15)] border border-gray-100 hover:border-emerald-300 transition-all duration-500 group flex flex-col relative"
                 >
                   {/* Image */}
                   <div
-                    className="relative w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden cursor-pointer flex-shrink-0"
+                    className="relative w-full aspect-[4/3] bg-gradient-to-br from-emerald-50/50 via-teal-50/30 to-white border-b border-gray-50 overflow-hidden cursor-pointer flex-shrink-0 flex items-center justify-center p-4 group-hover:bg-gradient-to-br group-hover:from-emerald-100/50 group-hover:via-teal-50/50 transition-colors duration-500"
                     onClick={() => router.push(`/products/${product.sku || product.id}`)}
                   >
                     <Image
                       src={product.images?.[0] || '/products/placeholder.jpg'}
                       alt={product.name}
                       fill
-                      className="object-contain p-5 group-hover:scale-105 transition-transform duration-500"
+                      className="object-contain p-2 mix-blend-multiply drop-shadow-xl group-hover:scale-110 group-hover:-translate-y-2 transition-transform duration-700 ease-out"
                     />
 
                     {/* Badges */}
-                    <div className="absolute top-3 left-3 right-3 flex items-start justify-between z-10">
+                    <div className="absolute top-4 left-4 right-4 flex items-start justify-between z-10">
                       {hasDiscount ? (
-                        <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-sm">
+                        <span className="bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg shadow-rose-500/30 uppercase tracking-widest border border-rose-400">
                           {product.discountPercent}% OFF
                         </span>
                       ) : (
                         product.stock > 0 && (
-                          <span className="bg-green-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-sm shadow-green-500/30">
+                          <span className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg shadow-emerald-500/30 uppercase tracking-widest border border-emerald-400">
                             Bestseller
                           </span>
                         )
                       )}
                       {product.stock <= 0 && (
-                        <span className="bg-gray-800 text-white text-[10px] font-black px-2.5 py-1 rounded-full ml-auto">
+                        <span className="bg-red-50 text-red-700 border border-red-200 text-[10px] font-black px-2.5 py-1 rounded-full ml-auto shadow-sm uppercase tracking-widest">
                           Out of Stock
                         </span>
                       )}
                     </div>
 
                     {/* Hover CTA */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 z-20">
-                      <span className="bg-white/90 backdrop-blur-sm text-gray-900 text-sm font-bold px-5 py-2 rounded-full shadow-md flex items-center gap-2">
-                        <Eye size={14} /> View Details
+                    <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px] transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 z-20">
+                      <span className="bg-black/90 text-white text-[11px] uppercase tracking-widest font-black px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 border border-white/20 backdrop-blur-md">
+                        <Eye size={14} className="text-emerald-400" /> View Details
                       </span>
                     </div>
                   </div>
 
                   {/* Content */}
-                  <div className="p-5 flex-1 flex flex-col">
+                  <div className="p-6 flex-1 flex flex-col relative z-30 bg-white">
                     <div className="cursor-pointer flex-1" onClick={() => router.push(`/products/${product.sku || product.id}`)}>
                       {product.category && (
-                        <span className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1 block">{product.category}</span>
+                        <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md uppercase tracking-widest mb-3 inline-block border border-emerald-100">{product.category}</span>
                       )}
-                      <h3 className="text-base font-black text-gray-900 mb-2 leading-snug line-clamp-2 group-hover:text-green-700 transition-colors">{product.name}</h3>
-                      <p className="text-gray-400 text-xs mb-3 line-clamp-2 leading-relaxed">{product.shortDescription || product.description}</p>
+                      <h3 className="text-lg font-black text-gray-900 mb-2 leading-snug line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-emerald-600 group-hover:to-teal-600 transition-all duration-300">{product.name}</h3>
+                      <p className="text-gray-500 text-xs mb-4 line-clamp-2 leading-relaxed font-medium">{product.shortDescription || product.description}</p>
 
                       {/* Nutrition chips */}
                       {(product.nutritionOptions?.length ?? 0) > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-3">
+                        <div className="flex flex-wrap gap-2 mb-4">
                           {product.nutritionOptions?.slice(0, 3).map((opt, i) => {
                             const Icon = iconForNutrition(opt.name);
                             return (
-                              <div key={i} className="flex items-center gap-1 bg-green-50 border border-green-100 px-2 py-0.5 rounded-md">
-                                <Icon size={10} className="text-green-600" />
-                                <span className="text-[10px] font-black text-green-700 whitespace-nowrap">
-                                  {opt.quantity}{opt.unit} <span className="text-gray-500 font-semibold uppercase">{opt.name}</span>
+                              <div key={i} className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-lg group-hover:border-emerald-100 group-hover:bg-emerald-50/30 transition-colors duration-300">
+                                <Icon size={12} className="text-emerald-500" />
+                                <span className="text-[10px] font-black text-gray-900 whitespace-nowrap">
+                                  {opt.quantity}{opt.unit} <span className="text-gray-500 font-bold uppercase">{opt.name}</span>
                                 </span>
                               </div>
                             );
@@ -198,19 +197,19 @@ export function FeaturedProductsSection() {
 
                     {/* Flavor pills */}
                     {(product.flavors?.length ?? 0) > 0 && (
-                      <div className="mb-4">
-                        <p className="text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">Flavor</p>
-                        <div className="flex flex-wrap gap-1.5">
+                      <div className="mb-5 pt-2">
+                        <p className="text-[9px] font-black text-gray-400 mb-2 uppercase tracking-widest">Select Flavor</p>
+                        <div className="flex flex-wrap gap-2">
                           {product.flavors.map((flavor) => {
                             const isSel = selectedFlavor === flavor;
                             return (
                               <button key={flavor}
                                 onClick={(e) => { e.stopPropagation(); setSelectedFlavors({ ...selectedFlavors, [product.sku || product.id]: flavor }); }}
                                 disabled={product.stock <= 0}
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition border cursor-pointer ${
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border cursor-pointer ${
                                   isSel
-                                    ? 'bg-green-500 text-white border-green-500 shadow-sm'
-                                    : 'bg-white text-gray-600 border-gray-200 hover:border-green-300 hover:text-green-700 hover:bg-green-50'
+                                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/20'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300 hover:text-emerald-700 shadow-sm'
                                 }`}
                               >{flavor}</button>
                             );
@@ -220,27 +219,26 @@ export function FeaturedProductsSection() {
                     )}
 
                     {/* Price + CTA */}
-                    <div className="pt-4 border-t border-gray-100 flex items-end justify-between gap-3">
+                    <div className="pt-5 border-t border-gray-50 flex items-end justify-between gap-3 mt-auto">
                       <div>
-                        <div className="flex items-baseline gap-1.5 flex-wrap">
-                          <span className="text-2xl font-black text-green-600">₹{product.price.toLocaleString()}</span>
-                          {hasDiscount && <span className="text-xs text-gray-400 line-through">₹{product.originalMrp!.toLocaleString()}</span>}
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <span className="text-2xl font-black text-emerald-700 font-mono tracking-tight drop-shadow-sm group-hover:text-emerald-600 transition-colors">₹{product.price.toLocaleString()}</span>
+                          {hasDiscount && <span className="text-sm text-gray-400 line-through font-semibold font-mono">₹{product.originalMrp!.toLocaleString()}</span>}
                         </div>
                         {hasDiscount && (
-                          <span className="text-[10px] font-black text-green-600">
-                            Save ₹{(product.originalMrp! - product.price).toLocaleString()}
+                          <span className="text-[10px] font-black text-emerald-600/80 uppercase tracking-wider mt-0.5 block flex items-center gap-1">
+                            <Zap size={10} className="text-amber-500" /> Save ₹{(product.originalMrp! - product.price).toLocaleString()}
                           </span>
                         )}
                       </div>
                       <motion.button
-                        whileHover={product.stock > 0 ? { scale: 1.04 } : {}}
-                        whileTap={product.stock > 0 ? { scale: 0.96 } : {}}
+                        whileHover={product.stock > 0 ? { scale: 1.08, rotate: -2 } : {}}
+                        whileTap={product.stock > 0 ? { scale: 0.92 } : {}}
                         disabled={product.stock <= 0}
                         onClick={(e) => { e.stopPropagation(); handleAddToCart(product, selectedFlavor || product.flavors?.[0]); }}
-                        className="flex-shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-xl font-bold text-sm transition shadow-[0_4px_12px_rgba(0,200,83,0.25)] hover:shadow-[0_8px_20px_rgba(0,200,83,0.35)] cursor-pointer"
+                        className="flex-shrink-0 flex items-center justify-center w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 disabled:from-gray-100 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none text-white rounded-[1rem] font-bold transition-all duration-300 shadow-lg shadow-emerald-500/30 cursor-pointer group-hover:shadow-emerald-500/50"
                       >
-                        <ShoppingCart size={15} />
-                        {product.stock <= 0 ? 'Sold Out' : 'Add'}
+                        <ShoppingCart size={18} />
                       </motion.button>
                     </div>
                   </div>

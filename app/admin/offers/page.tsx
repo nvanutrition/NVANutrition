@@ -5,7 +5,7 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase
 import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Tag, Plus, Trash2, Edit, Save, X, ToggleLeft, ToggleRight, CheckCircle, Percent } from 'lucide-react';
+import { Tag, Plus, Trash2, Edit, Save, X, ToggleLeft, ToggleRight, CheckCircle, Percent, Package } from 'lucide-react';
 import { fetchDbProducts, DbProduct } from '@/lib/db-products';
 
 interface Offer {

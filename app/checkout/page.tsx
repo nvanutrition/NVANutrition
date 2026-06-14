@@ -11,7 +11,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { setDoc, doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { setDoc, doc, getDoc, updateDoc, increment, collection, query, where, getDocs } from 'firebase/firestore';
 import {
   CheckCircle,
   ArrowRight,
@@ -205,10 +205,23 @@ export default function CheckoutPage() {
         console.error('Failed to send confirmation email:', emailErr);
       }
 
-      // 3. Decrement stock for each purchased item safely using increment
-      for (const item of items) {
+      // 3. Decrement stock for each purchased item (including free gifts) safely using increment
+      for (const item of orderPayload.items) {
         try {
-          const productRef = doc(db, 'products', item.id);
+          const skuToSearch = item.sku || item.id;
+          if (!skuToSearch) continue;
+          
+          const q = query(collection(db, 'products'), where('sku', '==', skuToSearch));
+          const snap = await getDocs(q);
+          let productRef;
+          
+          if (!snap.empty) {
+            productRef = doc(db, 'products', snap.docs[0].id);
+          } else {
+            // Fallback in case item.id is actually the document ID
+            productRef = doc(db, 'products', item.id);
+          }
+          
           // Auto decrease stock
           await updateDoc(productRef, { stock: increment(-item.quantity) });
         } catch (stockErr) {

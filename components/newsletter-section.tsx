@@ -46,21 +46,21 @@ export function NewsletterSection() {
               </div>
             </div>
 
-            <h2 className="text-3xl md:text-5xl font-black text-white mb-3 leading-tight">
-              Join the Inner Circle
+            <h2 className="text-3xl md:text-5xl font-black text-white mb-3 leading-tight tracking-tight">
+              Unlock The Vault
             </h2>
-            <p className="text-green-100 text-base md:text-lg mb-8 max-w-xl mx-auto">
-              Get exclusive VIP offers, product drop alerts, and premium nutrition guidance straight to your inbox.
+            <p className="text-green-100 text-base md:text-lg mb-8 max-w-xl mx-auto font-medium">
+              Get VIP access to unreleased flavors, private flash sales, and elite performance protocols straight to your inbox.
             </p>
 
             {/* Perks row */}
             <div className="flex flex-wrap justify-center gap-3 mb-10">
               {perks.map(({ icon: Icon, text, color, bg }) => (
-                <div key={text} className="flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-4 py-2">
+                <div key={text} className="flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-4 py-2 backdrop-blur-sm">
                   <div className={`w-6 h-6 rounded-full ${bg} flex items-center justify-center`}>
                     <Icon size={12} className={color} />
                   </div>
-                  <span className="text-white text-xs font-semibold">{text}</span>
+                  <span className="text-white text-xs font-bold tracking-wider uppercase">{text}</span>
                 </div>
               ))}
             </div>
@@ -69,16 +69,17 @@ export function NewsletterSection() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-white/10 border border-white/20 p-8 rounded-2xl inline-flex flex-col items-center gap-3"
+                className="bg-white/10 border border-white/20 p-8 rounded-2xl inline-flex flex-col items-center gap-3 backdrop-blur-md"
               >
-                <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)]">
                   <CheckCircle2 className="w-7 h-7 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-white font-black text-xl">You&apos;re In!</p>
-                  <p className="text-green-200 text-sm mt-1">Welcome to the NVA Inner Circle 🏆</p>
+                  <p className="text-white font-black text-xl uppercase tracking-widest">Access Granted</p>
+                  <p className="text-green-200 text-sm mt-1 font-medium">Welcome to the Elite Roster 🏆</p>
                 </div>
               </motion.div>
+
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
                 <input
