@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const role = data?.role || 'customer';
           setUserRole(role);
         } catch (error) {
-          console.error('[v0] Error fetching user role:', error);
+          console.error('Error fetching user role:', error);
           setUserRole('customer');
         }
       } else {

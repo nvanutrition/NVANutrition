@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, Search, Activity, FileText } from 'lucide-react';
 import Image from 'next/image';
 
@@ -84,47 +85,117 @@ export function VerificationSection() {
             transition={{ duration: 0.7 }}
             className="relative"
           >
-            <div className="relative w-full aspect-square rounded-[3rem] bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.05)] flex items-center justify-center p-12">
+            <div className="relative w-full aspect-square rounded-[3rem] bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.05)] flex items-center justify-center p-6 sm:p-12">
               
               {/* Decorative elements */}
               <div className="absolute top-10 right-10 w-32 h-32 bg-blue-400/10 blur-[40px] rounded-full pointer-events-none" />
               <div className="absolute bottom-10 left-10 w-40 h-40 bg-indigo-400/10 blur-[40px] rounded-full pointer-events-none" />
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none" />
 
-              {/* Main Graphic - Abstract Representation of a Lab Report / Phone Scan */}
-              <div className="relative w-full h-full max-w-sm mx-auto">
-                <div className="absolute inset-0 bg-white rounded-[2rem] shadow-2xl border border-gray-100 transform rotate-3 transition-transform hover:rotate-6 duration-500"></div>
-                <div className="absolute inset-0 bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 flex flex-col z-10 transform -rotate-2 transition-transform hover:rotate-0 duration-500">
-                  <div className="w-full h-48 bg-gray-50 rounded-xl border border-gray-100 mb-6 flex items-center justify-center relative overflow-hidden">
-                    <ShieldCheck size={64} className="text-blue-500/20" />
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
-                  </div>
-                  
-                  <div className="space-y-4 w-full">
-                    <div className="h-4 bg-gray-100 rounded-md w-3/4"></div>
-                    <div className="h-4 bg-gray-100 rounded-md w-1/2"></div>
-                    <div className="h-4 bg-gray-100 rounded-md w-5/6"></div>
-                  </div>
-
-                  <div className="mt-auto pt-6 flex items-center justify-between border-t border-gray-50">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
-                        <CheckCircleIcon />
-                      </div>
-                      <span className="text-sm font-black text-green-600 uppercase tracking-wider">Verified</span>
-                    </div>
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg p-1 border border-gray-200">
-                      <div className="w-full h-full bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png')] bg-cover opacity-50" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+              <CardStack />
             </div>
           </motion.div>
         </div>
       </div>
     </section>
+  );
+}
+
+const CARDS = [
+  {
+    id: 1,
+    content: (
+      <div className="w-full h-full flex flex-col bg-white">
+        <div className="relative w-full flex-grow mb-3 min-h-0">
+          <Image src="/fssai.jpeg" alt="FSSAI Certificate" fill className="object-contain" />
+        </div>
+        
+        <div className="mt-auto pt-3 flex items-center justify-center border-t border-gray-50">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
+              <CheckCircleIcon />
+            </div>
+            <span className="text-sm font-black text-green-600 uppercase tracking-wider">Verified</span>
+          </div>
+        </div>
+      </div>
+    )
+  },
+  {
+    id: 2,
+    content: (
+      <div className="w-full h-full flex flex-col bg-white">
+        <div className="relative w-full flex-grow mb-3 min-h-0">
+          <Image src="/shriram.jpeg" alt="Lab Test Certificate" fill className="object-contain" />
+        </div>
+        
+        <div className="mt-auto pt-3 flex items-center justify-center border-t border-gray-50">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
+              <CheckCircleIcon />
+            </div>
+            <span className="text-sm font-black text-green-600 uppercase tracking-wider">Verified</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+];
+
+function CardStack() {
+  const [cards, setCards] = useState(CARDS);
+
+  const handleDragEnd = (event: any, info: any) => {
+    if (Math.abs(info.offset.x) > 50 || Math.abs(info.offset.y) > 50) {
+      setCards((prev) => {
+        const newCards = [...prev];
+        const topCard = newCards.shift();
+        if (topCard) newCards.push(topCard);
+        return newCards;
+      });
+    }
+  };
+
+  return (
+    <div className="relative w-full aspect-[4/5] max-w-sm mx-auto">
+      {cards.map((card, index) => {
+        const isTop = index === 0;
+        return (
+          <motion.div
+            key={card.id}
+            className="absolute inset-0 bg-white rounded-[2rem] shadow-xl border border-gray-100 p-4 sm:p-5 flex flex-col origin-bottom cursor-grab active:cursor-grabbing"
+            style={{
+              zIndex: CARDS.length - index,
+            }}
+            initial={false}
+            animate={{
+              scale: 1 - index * 0.05,
+              y: index * 15,
+              rotate: index === 0 ? 0 : index % 2 === 0 ? 3 : -3,
+              opacity: 1 - index * 0.15,
+            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            drag={isTop}
+            dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+            dragElastic={1}
+            onDragEnd={handleDragEnd}
+            whileDrag={{ scale: 1.02, cursor: 'grabbing' }}
+          >
+            {card.content}
+            
+            {isTop && (
+               <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full pointer-events-none z-50 shadow-sm border border-gray-100">
+                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                   Swipe
+                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                 </span>
+               </div>
+            )}
+          </motion.div>
+        );
+      })}
+    </div>
   );
 }
 

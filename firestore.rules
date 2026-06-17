@@ -25,8 +25,8 @@ service cloud.firestore {
       // Users can only read their own orders; admins can read all.
       allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       
-      // Anyone can create an order (during checkout)
-      allow create: if true; 
+      // Only authenticated users can create an order for themselves
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid; 
       
       // Only admins can update or delete orders
       allow update, delete: if isAdmin();
@@ -36,8 +36,13 @@ service cloud.firestore {
     match /products/{productId} {
       allow read: if true; // Public can read products
       allow create, delete: if isAdmin();
-      // Allow customers to decrement/increment stock during checkout/cancellation
-      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']);
+      // Allow authenticated customers to decrement/increment stock during checkout/cancellation
+      // Ensure stock cannot drop below 0
+      allow update: if isAdmin() || (
+        request.auth != null &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']) &&
+        request.resource.data.stock >= 0
+      );
     }
     
     // Offers Collection
@@ -56,6 +61,17 @@ service cloud.firestore {
     // Categories Collection
     match /categories/{categoryId} {
       allow read: if true; // Public can read categories
+      allow write: if isAdmin();
+    }
+    
+    // Banners Collections
+    match /banners/{bannerId} {
+      allow read: if true; // Public can read banners
+      allow write: if isAdmin();
+    }
+
+    match /live_offer_banners/{bannerId} {
+      allow read: if true; // Public can read live offer banners
       allow write: if isAdmin();
     }
     

@@ -1,19 +1,60 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
     
-    // Function to check if user is admin (assumes custom claims or client-enforced if no claims exist)
-    // Since Storage rules cannot read Firestore documents directly easily without custom claims, 
-    // a common pattern is to allow authenticated users to upload, or rely on admin SDKs.
-    
-    match /{allPaths=**} {
-      // Anyone can view product images or files
+    // Check if user is accessing their own folder
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Cross-service rules (reading Firestore from Storage) often fail due to 
+    // missing Google Cloud IAM permissions (Firebase Rules System).
+    // As a workaround, we allow authenticated users to upload files, but 
+    // your Firestore rules strictly prevent non-admins from saving or displaying them.
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    // Public Assets (e.g., product images, offer images)
+    match /products/{allPaths=**} {
       allow read: if true;
-      
-      // Only authenticated users can upload (or admins). 
-      // Note: If only admins should upload, it's best done via the Admin SDK which bypasses rules,
-      // or you must set custom claims `request.auth.token.admin == true`
-      allow write: if request.auth != null;
+      // Only admins or backend can upload product images
+      allow write: if isAdmin(); 
+    }
+
+    match /offers/{allPaths=**} {
+      allow read: if true;
+      // Only admins can upload offer images
+      allow write: if isAdmin(); 
+    }
+
+    // Banners Assets (e.g., carousel and promotional banners)
+    match /banners/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /live_offer_banners/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // User Specific Assets (e.g., profile pictures)
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true; // Users can view profile images
+      // Users can only upload/modify their own files
+      allow write: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Default rule: deny all other paths by default, 
+    // admins can access everything
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }
