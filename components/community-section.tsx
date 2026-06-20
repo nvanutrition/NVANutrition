@@ -27,7 +27,7 @@ export function CommunitySection() {
           >
             <div className="inline-flex items-center gap-2 bg-pink-50 border border-pink-100 rounded-full px-5 py-2 mb-5">
               <Instagram size={14} className="text-pink-500" />
-              <span className="text-pink-600 font-black text-xs uppercase tracking-widest">@nvanutrition</span>
+              <span className="text-pink-600 font-black text-xs uppercase tracking-widest">@nva_nutrition</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 leading-tight tracking-tight">
               Join The <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">Movement.</span>
@@ -42,7 +42,7 @@ export function CommunitySection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
           >
-            <Link href="https://instagram.com" target="_blank" className="group flex items-center gap-2 bg-gray-900 text-white px-6 py-3.5 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg">
+            <Link href="https://instagram.com/nva_nutrition" target="_blank" className="group flex items-center gap-2 bg-gray-900 text-white px-6 py-3.5 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg">
               Follow Us <ArrowUpRight size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </Link>
           </motion.div>

@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Save, Tag, DollarSign, FileText, Zap, List, Image as ImageIcon,
-  Plus, Trash2, X, Upload, Star, Eye, ChevronRight, CheckCircle, AlertCircle,
+  Plus, Trash2, X, Upload, Star, Eye, ChevronRight, ChevronLeft, CheckCircle, AlertCircle,
   Package, Info, Leaf, Flame, Activity, Dumbbell, Droplets
 } from 'lucide-react';
 import { NutritionOption } from '@/lib/db-products';
@@ -17,6 +17,10 @@ import { Suspense } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Ingredient { name: string; quantity: string; unit: string; logo?: string }
+
+export type MediaItem = 
+  | { id: string, type: 'existing', url: string }
+  | { id: string, type: 'new', file: File, preview: string };
 
 interface FormData {
   name: string;
@@ -39,7 +43,7 @@ interface FormData {
   fullIngredients: string;
   nutritionOptions: NutritionOption[];
   ingredients: Ingredient[];
-  images: string[];
+  images: MediaItem[];
 }
 
 const EMPTY_FORM: FormData = {
@@ -95,10 +99,12 @@ const selectCls = "w-full px-4 py-3 bg-gray-50 border border-gray-100 text-gray-
 const textareaCls = "w-full px-4 py-3 bg-gray-50 border border-gray-100 text-gray-900 placeholder:text-gray-400 rounded-xl focus:outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 transition text-sm font-semibold resize-none";
 
 // ─── Live Preview Card ───────────────────────────────────────────────────────
-function LivePreview({ data, previewImage }: { data: FormData; previewImage?: string }) {
+function LivePreview({ data }: { data: FormData }) {
   const discount = parseFloat(data.discountPercent) || 0;
   const price = parseFloat(data.price) || 0;
   const mrp = parseFloat(data.originalMrp) || 0;
+
+  const displayImage = data.images[0]?.type === 'new' ? data.images[0].preview : data.images[0]?.url;
 
   return (
     <div className="sticky top-28 space-y-4">
@@ -110,8 +116,8 @@ function LivePreview({ data, previewImage }: { data: FormData; previewImage?: st
       <div className="rounded-3xl overflow-hidden border border-gray-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-xl transition duration-300">
         {/* Image */}
         <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 h-56 flex items-center justify-center overflow-hidden border-b border-gray-100">
-          {previewImage || data.images[0] ? (
-            <img src={previewImage || data.images[0]} alt={data.name || 'Product'} className="h-full object-contain p-4 mix-blend-multiply drop-shadow-md" />
+          {displayImage ? (
+            <img src={displayImage} alt={data.name || 'Product'} className="h-full object-contain p-4 mix-blend-multiply drop-shadow-md" />
           ) : (
             <div className="flex flex-col items-center gap-2 text-gray-300">
               <ImageIcon size={36} />
@@ -209,7 +215,6 @@ function ProductEditInner() {
 
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [activeTab, setActiveTab] = useState<TabId>('basic');
-  const [selectedFiles, setSelectedFiles] = useState<{ file: File; preview: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(isEditing);
 
@@ -253,7 +258,7 @@ function ProductEditInner() {
           ingredients: (d.ingredients || []).map((ing: any) =>
             typeof ing === 'string' ? { name: ing, quantity: '', unit: 'g', logo: 'default' } : ing
           ),
-          images: d.images || [],
+          images: (d.images || []).map((url: string) => ({ id: Math.random().toString(), type: 'existing', url })),
         });
       } catch { toast.error('Failed to load product'); }
       finally { setLoadingProduct(false); }
@@ -264,11 +269,23 @@ function ProductEditInner() {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setSelectedFiles(prev => [...prev, ...files.map(f => ({ file: f, preview: URL.createObjectURL(f) }))]);
+    const newItems: MediaItem[] = files.map(f => ({ id: Math.random().toString(), type: 'new', file: f, preview: URL.createObjectURL(f) }));
+    setForm(prev => ({ ...prev, images: [...prev.images, ...newItems] }));
   };
 
   const addImageUrl = (url: string) => {
-    if (url) setForm(p => ({ ...p, images: [...p.images, url] }));
+    if (url) setForm(p => ({ ...p, images: [...p.images, { id: Math.random().toString(), type: 'existing', url }] }));
+  };
+
+  const moveImage = (index: number, direction: 1 | -1) => {
+    setForm(prev => {
+      const newImages = [...prev.images];
+      const target = index + direction;
+      if (target >= 0 && target < newImages.length) {
+        [newImages[index], newImages[target]] = [newImages[target], newImages[index]];
+      }
+      return { ...prev, images: newImages };
+    });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -280,14 +297,18 @@ function ProductEditInner() {
 
     setSaving(true);
     try {
-      // Upload new files
-      const newUrls: string[] = [];
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const { file } = selectedFiles[i];
-        const path = `products/${editId || Date.now()}/${i}-${file.name}`;
-        const fileRef = ref(storage, path);
-        await uploadBytes(fileRef, file);
-        newUrls.push(await getDownloadURL(fileRef));
+      // Upload new files and keep sequence
+      const finalImages: string[] = [];
+      for (let i = 0; i < form.images.length; i++) {
+        const item = form.images[i];
+        if (item.type === 'existing') {
+          finalImages.push(item.url);
+        } else if (item.type === 'new') {
+          const path = `products/${editId || Date.now()}/${i}-${Date.now()}-${item.file.name}`;
+          const fileRef = ref(storage, path);
+          await uploadBytes(fileRef, item.file);
+          finalImages.push(await getDownloadURL(fileRef));
+        }
       }
 
       // Generate SKU if new
@@ -321,7 +342,7 @@ function ProductEditInner() {
         fullIngredients: form.fullIngredients,
         nutritionOptions: form.nutritionOptions,
         ingredients: form.ingredients,
-        images: [...form.images, ...newUrls],
+        images: finalImages,
         updatedAt: new Date(),
       };
 
@@ -348,8 +369,6 @@ function ProductEditInner() {
       </div>
     );
   }
-
-  const previewFile = selectedFiles[0]?.preview;
 
   return (
     <div className="min-h-screen bg-[#fcfcfc] font-sans pb-20">
@@ -798,33 +817,31 @@ function ProductEditInner() {
                   </div>
 
                   {/* Image grid */}
-                  {(form.images.length > 0 || selectedFiles.length > 0) && (
+                  {form.images.length > 0 && (
                     <div className="pt-4 border-t border-gray-50">
                       <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-4">
-                        {form.images.length + selectedFiles.length} image{form.images.length + selectedFiles.length !== 1 ? 's' : ''}
-                        {selectedFiles.length > 0 && <span className="text-purple-600 ml-2 normal-case tracking-normal font-bold bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">({selectedFiles.length} new — will upload on save)</span>}
+                        {form.images.length} image{form.images.length !== 1 ? 's' : ''}
+                        {form.images.some(img => img.type === 'new') && <span className="text-purple-600 ml-2 normal-case tracking-normal font-bold bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">({form.images.filter(img => img.type === 'new').length} new — will upload on save)</span>}
                       </p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        {form.images.map((img, idx) => (
-                          <div key={`existing-${idx}`} className="relative aspect-square rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] group">
-                            <img src={img} alt="Product" className="w-full h-full object-contain p-4" />
-                            {idx === 0 && <div className="absolute top-2 left-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-[10px] text-white font-black px-2 py-1 rounded-md shadow-sm tracking-wider uppercase">Main Photo</div>}
-                            <button type="button"
-                              onClick={() => up({ images: form.images.filter((_, i) => i !== idx) })}
-                              className="absolute top-2 right-2 p-2 bg-white text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition cursor-pointer shadow-md hover:bg-red-50 border border-gray-100">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        ))}
-                        {selectedFiles.map((f, idx) => (
-                          <div key={`new-${idx}`} className="relative aspect-square rounded-2xl overflow-hidden bg-white border border-purple-200 shadow-md group ring-2 ring-purple-500/20">
-                            <img src={f.preview} alt="New upload preview" className="w-full h-full object-contain p-4" />
-                            <div className="absolute top-2 left-2 bg-purple-600 text-[10px] text-white font-black px-2 py-1 rounded-md shadow-sm tracking-wider uppercase">New Upload</div>
-                            <button type="button"
-                              onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
-                              className="absolute top-2 right-2 p-2 bg-white text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition cursor-pointer shadow-md hover:bg-red-50 border border-gray-100">
-                              <Trash2 size={14} />
-                            </button>
+                        {form.images.map((item, idx) => (
+                          <div key={item.id} className={`relative aspect-square rounded-2xl overflow-hidden bg-white border ${item.type === 'new' ? 'border-purple-200 ring-2 ring-purple-500/20' : 'border-gray-100'} shadow-[0_8px_30px_rgb(0,0,0,0.04)] group`}>
+                            <img src={item.type === 'new' ? item.preview : item.url} alt="Product" className="w-full h-full object-contain p-4" />
+                            {idx === 0 && <div className="absolute top-2 left-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-[10px] text-white font-black px-2 py-1 rounded-md shadow-sm tracking-wider uppercase z-10">Main Photo</div>}
+                            {item.type === 'new' && idx !== 0 && <div className="absolute top-2 left-2 bg-purple-600 text-[10px] text-white font-black px-2 py-1 rounded-md shadow-sm tracking-wider uppercase z-10">New Upload</div>}
+                            
+                            {/* Actions overlay */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                              <button type="button" onClick={() => moveImage(idx, -1)} disabled={idx === 0} className="p-2 bg-white text-gray-700 hover:text-indigo-600 rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer">
+                                <ChevronLeft size={16} />
+                              </button>
+                              <button type="button" onClick={() => up({ images: form.images.filter((_, i) => i !== idx) })} className="p-2 bg-white text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl shadow-md transition cursor-pointer">
+                                <Trash2 size={16} />
+                              </button>
+                              <button type="button" onClick={() => moveImage(idx, 1)} disabled={idx === form.images.length - 1} className="p-2 bg-white text-gray-700 hover:text-indigo-600 rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer">
+                                <ChevronRight size={16} />
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -837,7 +854,7 @@ function ProductEditInner() {
 
           {/* Right: Live Preview Sticky Panel */}
           <div className="w-full lg:w-80 flex-shrink-0 lg:sticky lg:top-24 hidden md:block">
-            <LivePreview data={form} previewImage={previewFile} />
+            <LivePreview data={form} />
           </div>
         </div>
       </form>

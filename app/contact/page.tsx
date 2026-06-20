@@ -22,11 +22,11 @@ const contactCards = [
 ];
 
 const socials = [
-  { name: 'Instagram', handle: '@NVANutrition', color: 'from-pink-500 to-rose-600' },
-  { name: 'Facebook', handle: 'NVA Nutrition', color: 'from-blue-500 to-blue-700' },
-  { name: 'YouTube', handle: 'NVA Nutrition Channel', color: 'from-red-500 to-red-700' },
-  { name: 'LinkedIn', handle: 'NVA Nutrition', color: 'from-sky-500 to-blue-700' },
-  { name: 'Twitter/X', handle: '@NVANutrition', color: 'from-gray-700 to-gray-900' },
+  { name: 'Instagram', handle: '@nva_nutrition', url: 'https://instagram.com/nva_nutrition', color: 'from-pink-500 to-rose-600' },
+  { name: 'Facebook', handle: 'NVA Nutrition', url: '#', color: 'from-blue-500 to-blue-700' },
+  { name: 'YouTube', handle: 'NVA Nutrition Channel', url: '#', color: 'from-red-500 to-red-700' },
+  { name: 'LinkedIn', handle: 'NVA Nutrition', url: '#', color: 'from-sky-500 to-blue-700' },
+  { name: 'Twitter/X', handle: '@NVANutrition', url: '#', color: 'from-gray-700 to-gray-900' },
 ];
 
 export default function ContactPage() {
@@ -163,7 +163,7 @@ export default function ContactPage() {
 
                 <div className="space-y-3 mb-8">
                   {socials.map((social, i) => (
-                    <motion.a key={i} href="#" whileHover={{ x: 4 }}
+                    <motion.a key={i} href={social.url} target={social.url !== '#' ? "_blank" : undefined} rel={social.url !== '#' ? "noopener noreferrer" : undefined} whileHover={{ x: 4 }}
                       className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl hover:border-green-300 hover:bg-green-50 transition group">
                       <div>
                         <p className="font-bold text-gray-900 group-hover:text-green-700 transition">{social.name}</p>

@@ -15,7 +15,7 @@ export function Footer() {
  <Image src="/logo.png" alt="NVA Nutrition" width={200} height={80} className="w-auto h-14 mb-4 object-contain" />
  <p className="text-muted-foreground text-sm leading-relaxed">Fuel Your Performance. Transform Your Body. Premium sports nutrition for champions.</p>
  <div className="flex gap-2 mt-5">
- <a href="#" aria-label="Instagram" className="w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-pink-400 hover:border-pink-400/30 hover:bg-pink-400/5 transition">
+ <a href="https://instagram.com/nva_nutrition" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-pink-400 hover:border-pink-400/30 hover:bg-pink-400/5 transition">
  <Instagram className="w-4 h-4" />
  </a>
  <a href="#" aria-label="Facebook" className="w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-blue-400 hover:border-blue-400/30 hover:bg-blue-400/5 transition">
