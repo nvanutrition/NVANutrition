@@ -499,38 +499,25 @@ export default function ProductDetailPage() {
                 <motion.div key="ingredients" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
                   {product.ingredients && product.ingredients.length > 0 && (
                     <div>
-                      <h3 className="font-black text-gray-900 text-xl mb-6 flex items-center gap-3">
-                        <div className="bg-cyan-50 p-2 rounded-xl border border-cyan-100"><Zap size={20} className="text-cyan-500" /></div>
-                        Key Active Ingredients
-                      </h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+                        <h3 className="font-black text-gray-900 text-xl flex items-center gap-3">
+                          <div className="bg-cyan-50 p-2 rounded-xl border border-cyan-100"><Zap size={20} className="text-cyan-500" /></div>
+                          Ingredients Profile
+                        </h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {product.ingredients.map((ing, i) => {
                           const isObj = typeof ing === 'object';
-                          const logoType = isObj ? (ing as any).logo : 'default';
-                          let Icon: any = Check;
-                          if (logoType === 'protein') Icon = Dumbbell;
-                          if (logoType === 'energy') Icon = Zap;
-                          if (logoType === 'vitamin') Icon = Activity;
-                          if (logoType === 'carb' || logoType === 'fat') Icon = Flame;
                           return (
-                            <div key={i} className="bg-gray-50 border border-gray-100 p-6 rounded-2xl flex flex-col items-center text-center hover:bg-cyan-50/50 hover:shadow-sm hover:border-cyan-200 transition group">
-                              <div className="w-12 h-12 bg-white border border-gray-100 shadow-sm rounded-full flex items-center justify-center mb-4 text-cyan-400 group-hover:text-cyan-600 transition-colors">
-                                <Icon size={20} />
-                              </div>
-                              <p className="text-sm font-bold text-gray-900 mb-2 leading-tight">{isObj ? (ing as any).name : ing}</p>
+                            <div key={i} className="flex items-center justify-between p-5 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-cyan-50/50 hover:border-cyan-200 hover:shadow-sm transition">
+                              <span className="text-sm font-bold text-gray-600 uppercase tracking-wider">{isObj ? (ing as any).name : ing}</span>
                               {isObj && (ing as any).quantity && (
-                                <span className="text-[10px] font-black uppercase tracking-wider text-cyan-700 bg-cyan-100 border border-cyan-200 shadow-sm px-2.5 py-1 rounded-md">{(ing as any).quantity}{(ing as any).unit}</span>
+                                <span className="text-xl font-black text-gray-900 font-mono">{(ing as any).quantity}<span className="text-sm text-gray-500 ml-0.5">{(ing as any).unit}</span></span>
                               )}
                             </div>
                           );
                         })}
                       </div>
-                    </div>
-                  )}
-                  {product.fullIngredients && (
-                    <div className="pt-6 border-t border-gray-100">
-                      <h3 className="font-black text-gray-900 text-[10px] uppercase tracking-wider mb-4">Full Ingredient Label</h3>
-                      <p className="text-sm font-medium text-gray-600 leading-relaxed bg-gray-50 p-6 rounded-2xl border border-gray-100">{product.fullIngredients}</p>
                     </div>
                   )}
                 </motion.div>
@@ -544,7 +531,20 @@ export default function ProductDetailPage() {
                     How to Use
                   </h3>
                   <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6 md:p-8">
-                    <p className="text-gray-700 font-semibold leading-relaxed whitespace-pre-line text-base">{product.usage || 'Usage instructions not available.'}</p>
+                    {product.usage ? (
+                      <ul className="space-y-3">
+                        {product.usage.split(',').filter(step => step.trim()).map((step, idx) => (
+                          <li key={idx} className="flex items-start gap-3">
+                            <div className="w-6 h-6 rounded-full bg-purple-100 border border-purple-200 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+                              <span className="text-purple-600 text-[10px] font-black">{idx + 1}</span>
+                            </div>
+                            <span className="text-gray-700 font-semibold leading-relaxed text-base pt-0.5">{step.trim()}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-700 font-semibold leading-relaxed text-base">Usage instructions not available.</p>
+                    )}
                   </div>
                   <div className="mt-6 p-5 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-4 shadow-sm">
                     <div className="w-8 h-8 bg-white rounded-xl shadow-sm border border-amber-100 flex items-center justify-center flex-shrink-0">

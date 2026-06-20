@@ -601,17 +601,12 @@ function ProductEditInner() {
                         placeholder="Builds lean muscle mass, Supports fast recovery, 25g protein per serving… (comma separated)" />
                     </Field>
 
-                    <Field label="Usage / How to Use" hint="→ Shown in the How to Use tab on product page">
+                    <Field label="Usage / How to Use" hint="→ Shown as bullet points in the How to Use tab on product page">
                       <textarea className={textareaCls} rows={3} value={form.usage}
                         onChange={e => up({ usage: e.target.value })}
-                        placeholder="Mix 1 scoop (30g) with 200-250ml cold water or milk. Take post-workout for best results…" />
+                        placeholder="Mix 1 scoop (30g) with 200-250ml cold water, Take post-workout for best results… (comma separated)" />
                     </Field>
 
-                    <Field label="Full Ingredients List (Label Text)" hint="→ Shown in the Ingredients label text block on product page">
-                      <textarea className={textareaCls} rows={3} value={form.fullIngredients}
-                        onChange={e => up({ fullIngredients: e.target.value })}
-                        placeholder="Whey Protein Concentrate (80%), Whey Protein Isolate, Cocoa Powder, Natural Flavors, Sucralose…" />
-                    </Field>
                   </div>
                 </motion.div>
               )}
@@ -715,17 +710,48 @@ function ProductEditInner() {
                     </button>
                   </div>
 
-                  <div className="bg-cyan-50 border border-cyan-100 rounded-xl p-4 text-xs font-semibold text-cyan-700 flex gap-3 shadow-sm">
+                  <div className="bg-cyan-50 border border-cyan-100 rounded-xl p-4 text-xs font-semibold text-cyan-700 flex gap-3 shadow-sm mb-4">
                     <Info size={16} className="flex-shrink-0 text-cyan-500" />
                     <div>These are the <strong>spotlight ingredient cards</strong> shown on the product detail page — typically 4–6 key active ingredients with their per-serving amount.</div>
                   </div>
 
+                  <div className="bg-cyan-50/50 border border-cyan-100 p-4 rounded-xl mb-4">
+                    <p className="text-[10px] font-bold text-cyan-700 uppercase tracking-wider mb-2">Quick Add Multiple (Comma Separated)</p>
+                    <div className="flex gap-2">
+                      <input type="text" placeholder="e.g. Whey Isolate, BCAAs, Creatine" 
+                        className="flex-1 px-4 py-2 text-sm bg-white border border-cyan-200 rounded-lg focus:outline-none focus:border-cyan-400"
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const val = e.currentTarget.value;
+                            if (val.trim()) {
+                              const newIngs = val.split(',').map(s => ({ name: s.trim(), quantity: '', unit: 'g', logo: 'default' })).filter(i => i.name);
+                              up({ ingredients: [...form.ingredients, ...newIngs] });
+                              e.currentTarget.value = '';
+                            }
+                          }
+                        }}
+                      />
+                      <button type="button" 
+                        onClick={e => {
+                          const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                          const val = input.value;
+                          if (val.trim()) {
+                            const newIngs = val.split(',').map(s => ({ name: s.trim(), quantity: '', unit: 'g', logo: 'default' })).filter(i => i.name);
+                            up({ ingredients: [...form.ingredients, ...newIngs] });
+                            input.value = '';
+                          }
+                        }}
+                        className="px-4 py-2 bg-white border border-cyan-200 text-cyan-700 rounded-lg text-sm font-bold hover:bg-cyan-50 transition cursor-pointer">
+                        Add Multiple
+                      </button>
+                    </div>
+                  </div>
+
                   {form.ingredients.length > 0 && (
                     <div className="grid grid-cols-12 gap-3 text-[10px] text-gray-500 font-bold uppercase tracking-wider px-2">
-                      <div className="col-span-4">Ingredient Name</div>
-                      <div className="col-span-2">Amount</div>
-                      <div className="col-span-2">Unit</div>
-                      <div className="col-span-3">Icon Style</div>
+                      <div className="col-span-7">Ingredient Name</div>
+                      <div className="col-span-4">Icon Style</div>
                       <div className="col-span-1"></div>
                     </div>
                   )}
@@ -733,22 +759,12 @@ function ProductEditInner() {
                   <div className="space-y-3">
                     {form.ingredients.map((ing, idx) => (
                       <div key={idx} className="grid grid-cols-12 gap-3 items-center bg-gray-50 border border-gray-100 rounded-2xl p-4 transition hover:border-cyan-200">
-                        <div className="col-span-4">
+                        <div className="col-span-7">
                           <input type="text" placeholder="e.g. Whey Isolate" value={ing.name}
                             onChange={e => { const n = [...form.ingredients]; n[idx].name = e.target.value; up({ ingredients: n }); }}
                             className="w-full px-4 py-2.5 bg-white border border-gray-200 text-gray-900 rounded-xl focus:outline-none focus:border-cyan-400 font-semibold text-sm transition" />
                         </div>
-                        <div className="col-span-2">
-                          <input type="text" placeholder="25" value={ing.quantity}
-                            onChange={e => { const n = [...form.ingredients]; n[idx].quantity = e.target.value; up({ ingredients: n }); }}
-                            className="w-full px-4 py-2.5 bg-white border border-gray-200 text-gray-900 rounded-xl focus:outline-none focus:border-cyan-400 font-semibold text-sm transition" />
-                        </div>
-                        <div className="col-span-2">
-                          <input type="text" placeholder="g" value={ing.unit}
-                            onChange={e => { const n = [...form.ingredients]; n[idx].unit = e.target.value; up({ ingredients: n }); }}
-                            className="w-full px-4 py-2.5 bg-white border border-gray-200 text-gray-900 rounded-xl focus:outline-none focus:border-cyan-400 font-semibold text-sm transition" />
-                        </div>
-                        <div className="col-span-3">
+                        <div className="col-span-4">
                           <select value={ing.logo || 'default'}
                             onChange={e => { const n = [...form.ingredients]; n[idx].logo = e.target.value; up({ ingredients: n }); }}
                             className="w-full px-4 py-2.5 bg-white border border-gray-200 text-gray-900 rounded-xl focus:outline-none focus:border-cyan-400 font-semibold text-sm transition cursor-pointer">
